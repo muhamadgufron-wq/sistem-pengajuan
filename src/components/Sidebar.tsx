@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Home, FileText, Users, LogOut, Package, DollarSign, History } from 'lucide-react'; // Ikon
+import { Home, FileText, Users, LogOut, Package, DollarSign, History, Ghost } from 'lucide-react'; // Ikon
 import { toast } from 'sonner';
+import { BarChart3 } from 'lucide-react';
 
 interface SidebarProps {
     fullName: string;
@@ -74,11 +75,18 @@ export default function Sidebar({ fullName, role }: SidebarProps) {
                 
                 {/* Menu untuk Superadmin */}
                 {role === 'superadmin' && (
+                    <>
                      <Link href="/manage-users" passHref>
                         <Button variant="ghost" className="w-full justify-start text-base">
                             <Users className="mr-3 h-5 w-5" /> Manajemen User
                         </Button>
                     </Link>
+                    <Link href={"/reports"} passHref>
+                        <Button variant="ghost" className="w-full justify-start text-base">
+                        <BarChart3 className="mr-3 h-5 w-5"/>Laporan
+                        </Button>
+                    </Link>
+                    </> 
                 )}
             </nav>
 

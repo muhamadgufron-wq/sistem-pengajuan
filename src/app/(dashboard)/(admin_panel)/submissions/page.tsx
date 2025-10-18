@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/app/lib/supabase/client'; // Pastikan path ini benar
+import { createClient } from '@/app/lib/supabase/client';
 import { toast } from "sonner";
 import { format } from 'date-fns';
 
@@ -199,7 +199,7 @@ export default function AdminPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="button" onClick={handleUpdate}>Simpan Perubahan</Button>
+                        <Button type="button" onClick={handleUpdate} className="bg-green-300 hover:bg-green-500" >Simpan Perubahan</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
