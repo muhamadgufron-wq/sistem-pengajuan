@@ -4,16 +4,42 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Home, FileText, Users, LogOut, Package, DollarSign, History, Ghost } from 'lucide-react'; // Ikon
+import { Home, FileText, Users, LogOut, Package, DollarSign, History, BarChart3, Settings } from 'lucide-react';
 import { toast } from 'sonner';
-import { BarChart3 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SidebarProps {
     fullName: string;
     role: string;
+    isSidebarOpen: boolean;
 }
 
-export default function Sidebar({ fullName, role }: SidebarProps) {
+// Komponen helper untuk NavLink agar lebih rapi
+const NavLink = ({ href, icon: Icon, label, isSidebarOpen }: { href: string; icon: React.ElementType; label: string; isSidebarOpen: boolean; }) => (
+    <TooltipProvider delayDuration={0}>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Link href={href} passHref>
+                    <Button
+                        variant="ghost"
+                        className={`w-full text-base transition-all duration-300 ${isSidebarOpen ? 'justify-start' : 'justify-center h-12'}`} // Ukuran & alignment berubah
+                    >
+                        <Icon className={`h-5 w-5 ${isSidebarOpen ? 'mr-3' : 'mr-0'}`} /> {/* Margin berubah */}
+                        {isSidebarOpen && <span>{label}</span>} {/* Teks hanya muncul jika sidebar terbuka */}
+                    </Button>
+                </Link>
+            </TooltipTrigger>
+            {/* Tooltip hanya muncul jika sidebar tertutup */}
+            {!isSidebarOpen && (
+                <TooltipContent side="right">
+                    <p>{label}</p>
+                </TooltipContent>
+            )}
+        </Tooltip>
+    </TooltipProvider>
+);
+
+export default function Sidebar({ fullName, role, isSidebarOpen}: SidebarProps) {
     const router = useRouter();
     const supabase = createClient();
 
@@ -24,77 +50,59 @@ export default function Sidebar({ fullName, role }: SidebarProps) {
         router.refresh();
     };
 
-    return (
-        <aside className="w-64 h-screen bg-card text-card-foreground flex flex-col border-r shadow-md">
+return (
+        <aside className="h-screen bg-card text-card-foreground flex flex-col border-r shadow-md transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}">
             {/* Header Sidebar */}
-            <div className="p-6 border-b">
-                <h2 className="text-xl font-bold">Sistem Pengajuan</h2>
-                <p className="text-sm text-muted-foreground mt-2">
+            <div className="p-6 border-b transition-all duration-300 ${isSidebarOpen ? 'h-auto opacity-100' : 'h-0 opacity-0 overflow-hidden p-0 border-0'}">
+                <h2 className="text-xl font-bold whitespace-nowrap">Sistem Pengajuan</h2>
+                <p className="text-sm text-muted-foreground mt-2 whitespace-nowrap">
                     Selamat datang, <br />
                     <span className="font-semibold text-foreground">{fullName}</span>
                 </p>
             </div>
             
-            {/* Menu Navigasi */}
-            <nav className="flex-1 px-4 py-6 space-y-2">
-                <Link href="/admin" passHref>
-                    <Button variant="ghost" className="w-full justify-start text-base">
-                        <Home className="mr-3 h-5 w-5" /> Dashboard
-                    </Button>
-                </Link>
+            {/* Logo kecil saat tertutup (Opsional) */}
+             {!isSidebarOpen && (
+                 <div className="flex items-center justify-center h-16 border-b flex-shrink-0">
+                     <Settings className="h-8 w-8 text-primary" /> {/* Ganti dengan logo Anda */}
+                 </div>
+             )}
 
-                {/* Menu untuk Karyawan */}
-                {role === 'karyawan' && (
-                    <>
-                        <Link href="/ajukan-barang" passHref>
-                            <Button variant="ghost" className="w-full justify-start text-base">
-                                <Package className="mr-3 h-5 w-5" /> Ajukan Barang
-                            </Button>
-                        </Link>
-                        <Link href="/ajukan-uang" passHref>
-                            <Button variant="ghost" className="w-full justify-start text-base">
-                                <DollarSign className="mr-3 h-5 w-5" /> Ajukan Uang
-                            </Button>
-                        </Link>
-                         <Link href="/status-pengajuan" passHref>
-                            <Button variant="ghost" className="w-full justify-start text-base">
-                                <History className="mr-3 h-5 w-5" /> Riwayat & Status
-                            </Button>
-                        </Link>
-                    </>
-                )}
 
-                {/* Menu untuk Admin & Superadmin */}
+           {/* Menu Navigasi */}
+            <nav className={`flex-1 px-2 py-4 space-y-1 overflow-y-auto overflow-x-hidden ${!isSidebarOpen && 'flex flex-col items-center'}`}>
+                <NavLink href="/admin" icon={Home} label="Dashboard" isSidebarOpen={isSidebarOpen} />
+
                 {(role === 'admin' || role === 'superadmin') && (
-                    <Link href="/submissions" passHref>
-                        <Button variant="ghost" className="w-full justify-start text-base">
-                            <FileText className="mr-3 h-5 w-5" /> Panel Pengajuan
-                        </Button>
-                    </Link>
+                    <NavLink href="/submissions" icon={FileText} label="Panel Pengajuan" isSidebarOpen={isSidebarOpen} />
                 )}
-                
-                {/* Menu untuk Superadmin */}
                 {role === 'superadmin' && (
                     <>
-                     <Link href="/manage-users" passHref>
-                        <Button variant="ghost" className="w-full justify-start text-base">
-                            <Users className="mr-3 h-5 w-5" /> Manajemen User
-                        </Button>
-                    </Link>
-                    <Link href={"/reports"} passHref>
-                        <Button variant="ghost" className="w-full justify-start text-base">
-                        <BarChart3 className="mr-3 h-5 w-5"/>Laporan
-                        </Button>
-                    </Link>
-                    </> 
+                        <NavLink href="/manage-users" icon={Users} label="Manajemen User" isSidebarOpen={isSidebarOpen} />
+                        <NavLink href="/reports" icon={BarChart3} label="Laporan" isSidebarOpen={isSidebarOpen} />
+                    </>
                 )}
             </nav>
 
             {/* Tombol Logout di Bawah */}
-            <div className="p-4 mt-auto border-t">
-                <Button variant="destructive" className="w-full" onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" /> Logout
-                </Button>
+           <div className={`p-2 mt-auto border-t transition-all duration-300 ${isSidebarOpen ? 'px-4 py-4' : 'px-2 py-2'}`}>
+                <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <Button
+                                variant="destructive"
+                                className={`w-full transition-all duration-300 ${isSidebarOpen ? 'justify-start' : 'justify-center h-12'}`}
+                                onClick={handleLogout}
+                            >
+                                <LogOut className={`h-5 w-5 ${isSidebarOpen ? 'mr-2' : 'mr-0'}`} />
+                                {isSidebarOpen && <span>Logout</span>}
+                            </Button>
+                        </TooltipTrigger>
+                         {!isSidebarOpen && (
+                            <TooltipContent side="right"><p>Logout</p></TooltipContent>
+                         )}
+                    </Tooltip>
+                </TooltipProvider>
             </div>
         </aside>
     );

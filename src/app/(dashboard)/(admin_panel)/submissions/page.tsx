@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@/app/lib/supabase/client';
 import { toast } from "sonner";
 import { format } from 'date-fns';
@@ -15,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, SearchIcon, FilterIcon, RefreshCcwIcon } from 'lucide-react';
+import { CalendarIcon, SearchIcon, FilterIcon, RefreshCcwIcon, ExternalLink } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 
@@ -45,6 +44,7 @@ interface PengajuanBarang {
 }
 
 interface PengajuanUang {
+    bukti_laporan_url: any;
     id: number;
     created_at: string;
     jumlah_uang: number;
@@ -58,6 +58,13 @@ interface PengajuanUang {
     catatan_admin: string;
     kategori: string | null;
 }
+
+interface ViewingItem {
+  id?: string | number;
+  bukti_laporan_url?: string;
+  [key: string]: any;
+}
+
 
 type PengajuanItem = PengajuanBarang | PengajuanUang;
 
@@ -167,11 +174,23 @@ export default function AdminPage() {
         <>
             {/* Dialog untuk Update Status */}
             <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="text-xl">Update Pengajuan #{editingItem?.id}</DialogTitle>
-                        <DialogDescription>Ubah status, berikan catatan, dan tentukan kategori.</DialogDescription>
+                        <DialogDescription>
+                            Diajukan oleh: {editingItem?.full_name || '-'} | {editingItem && formatDate(editingItem.created_at)}
+                        </DialogDescription>
                     </DialogHeader>
+                    <div className="my-2 space-y-2 border bg-muted/30 p-3 rounded-md">
+                        <p className="text-sm font-semibold text-foreground">Detail Pengajuan:</p>
+                        {editingItem && 'nama_barang' in editingItem && (
+                            <p className="text-sm text-muted-foreground">{editingItem.nama_barang} ({editingItem.jumlah} unit)</p>
+                        )}
+                        {editingItem && 'jumlah_uang' in editingItem && (
+                             <p className="text-sm text-muted-foreground">Rp {Number(editingItem.jumlah_uang).toLocaleString('id-ID')} - {editingItem.keperluan}</p>
+                        )}
+                    </div>
+                    
                     <div className="grid gap-4 py-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Kategori</label>
@@ -211,9 +230,13 @@ export default function AdminPage() {
                         <DialogTitle className="text-2xl">Detail Pengajuan #{viewingItem?.id}</DialogTitle>
                         <DialogDescription>Diajukan oleh: <span className="font-semibold">{viewingItem?.full_name}</span> pada {viewingItem && formatDate(viewingItem.created_at)}</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Status</span><div className="col-span-2"><StatusBadge status={viewingItem?.status || ''} /></div></div>
-                        <div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Kategori</span><div className="col-span-2 font-medium">{viewingItem?.kategori || <span className="italic text-muted-foreground">Belum Dikategorikan</span>}</div></div>
+                    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-6">
+                            <div className="grid grid-cols-3 items-center gap-4 border-b pb-2">
+                            <span className="text-muted-foreground">Status</span>
+                            <div className="col-span-2"><StatusBadge status={viewingItem?.status || ''} /></div>
+                        </div>
+                        <div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Kategori</span>
+                        <div className="col-span-2 font-medium">{viewingItem?.kategori || <span className="italic text-muted-foreground">Belum Dikategorikan</span>}</div></div>
                         
                         {activeTab === 'barang' && viewingItem && 'nama_barang' in viewingItem && (
                             <><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Nama Barang</span><span className="col-span-2 font-medium">{viewingItem.nama_barang}</span></div><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Jumlah</span><span className="col-span-2 font-medium">{viewingItem.jumlah} unit</span></div><div className="grid grid-cols-3 items-start gap-4 border-b pb-2"><span className="text-muted-foreground">Alasan</span><span className="col-span-2">{viewingItem.alasan}</span></div></>
@@ -222,8 +245,42 @@ export default function AdminPage() {
                             <><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Nominal</span><span className="col-span-2 font-medium text-lg">Rp {Number(viewingItem.jumlah_uang).toLocaleString('id-ID')}</span></div><div className="grid grid-cols-3 items-start gap-4 border-b pb-2"><span className="text-muted-foreground">Keperluan</span><span className="col-span-2">{viewingItem.keperluan}</span></div><div className="grid grid-cols-3 items-center gap-4 border-b pb-2 pt-4"><span className="text-muted-foreground col-span-3 font-bold text-primary">Info Rekening</span></div><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Bank</span><span className="col-span-2 font-medium">{viewingItem.nama_bank}</span></div><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">No. Rekening</span><span className="col-span-2 font-medium">{viewingItem.nomor_rekening}</span></div><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Atas Nama</span><span className="col-span-2 font-medium">{viewingItem.atas_nama}</span></div></>
                         )}
                         <div className="grid grid-cols-3 items-start gap-4 pt-2"><span className="text-muted-foreground">Catatan Admin</span><div className="col-span-2 text-sm italic bg-yellow-50 p-2 rounded-md">{viewingItem?.catatan_admin || 'Belum ada catatan.'}</div></div>
-                    </div>
-                    <DialogFooter><Button variant="outline" onClick={() => setViewingItem(null)}>Tutup</Button></DialogFooter>
+
+                        {activeTab === 'uang' && viewingItem && 'bukti_laporan_url' in viewingItem && viewingItem.bukti_laporan_url && (
+                                <><div className="grid grid-cols-3 items-start gap-4 pt-4 border-t mt-4">
+                                    <span className="text-muted-foreground font-semibold pt-1">Bukti Laporan</span>
+                                    <div className="col-span-2">
+                                        {(() => {
+                                        const buktiPath = (viewingItem as PengajuanUang).bukti_laporan_url!;
+                                        const apiBuktiUrl = `/api/bukti/${buktiPath}`;
+
+                                        return /\.(jpg|jpeg|png|gif)$/i.test(buktiPath)
+                                            ? (
+                                            <a
+                                                href={apiBuktiUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block border rounded-md overflow-hidden hover:opacity-80 transition-opacity"
+                                            >
+                                                <img
+                                                src={apiBuktiUrl}
+                                                alt={`Bukti ${viewingItem.id}`}
+                                                className="max-w-xs max-h-40 object-contain"
+                                                />
+                                            </a>
+                                            )
+                                            : (
+                                            <p className="text-sm italic text-muted-foreground pt-1">Belum ada laporan</p>
+                                            )
+                                        })()}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                </div>
+                    <DialogFooter>
+                        <Button variant="destructive" onClick={() => setViewingItem(null)}>Tutup</Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

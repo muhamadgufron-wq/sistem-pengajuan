@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { BookCheck, UploadCloud } from 'lucide-react';
 
 // Komponen Card (seperti sebelumnya)
 const DashboardCard = ({ href, icon, title, description, isAdminCard = false }: {
@@ -30,6 +31,7 @@ export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
     const [userRole, setUserRole] = useState('');
     const [fullName, setFullName] = useState('');
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     useEffect(() => {
         const checkUserAndRole = async () => {
@@ -47,6 +49,12 @@ export default function DashboardPage() {
                 if (profile) {
                     setUserRole(profile.role);
                     setFullName(profile.full_name);
+                    
+                    // Cek role setelah mendapatkan data profil
+                    if (profile.role === 'admin' || profile.role === 'superadmin') {
+                        setIsRedirecting(true);
+                        router.replace('/admin');
+                    }
                 }
             }
         };
@@ -62,11 +70,15 @@ export default function DashboardPage() {
     if (!user || !userRole) {
         return <div className="min-h-screen flex items-center justify-center bg-secondary/40">Memuat...</div>;
     }
-    
-    // Jika role adalah admin/superadmin, arahkan ke halaman admin
+
+    // Tampilkan loading saat redirect dipicu
+    if (isRedirecting) {
+        return <div className="min-h-screen flex items-center justify-center bg-secondary/40">Mengarahkan ke halaman admin...</div>;
+    }
+
+    // Jika role adalah admin/superadmin, tampilkan pesan bahwa redirect sedang berlangsung
     if (userRole === 'admin' || userRole === 'superadmin') {
-        router.replace('/admin'); // Gunakan replace agar tidak bisa kembali
-        return <div className="min-h-screen flex items-center justify-center bg-secondary/40">Memuat......</div>;
+        return <div className="min-h-screen flex items-center justify-center bg-secondary/40">Anda tidak memiliki akses ke halaman ini.</div>;
     }
 
     return (
@@ -102,6 +114,12 @@ export default function DashboardPage() {
                         title="Riwayat & Status"
                         description="Lihat status dan riwayat semua pengajuan yang telah Anda buat."
                         icon={<svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                    />
+                    <DashboardCard 
+                        href="/laporan-penggunaan"
+                        title="Laporan Pengajuan Uang"
+                        description="Upload bukti penggunaan uang untuk minggu lalu."
+                        icon={<UploadCloud className="w-8 h-8 text-cyan-500" />}
                     />
                 </div>
             </main>
