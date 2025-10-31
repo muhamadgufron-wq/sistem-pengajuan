@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"; // Tambah DialogTrigger, DialogClose
+import { Input } from "@/components/ui/input"; // Tambah Input
 import Link from 'next/link';
-import { UsersIcon } from 'lucide-react';
+import { UsersIcon, UserPlus } from 'lucide-react'; // Tambah UserPlus
 
 interface UserWithRole {
     id: string;
@@ -23,6 +25,13 @@ export default function ManageUsersPage() {
     const router = useRouter();
     const [users, setUsers] = useState<UserWithRole[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    //State untuk Dialog Undang user baru
+    const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteFullName, setInviteFullName] = useState('');
+    const [inviteRole, setInviteRole] = useState('karyawan');
+    const [isInviting, setIsInviting] = useState(false);
 
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
@@ -71,15 +80,89 @@ export default function ManageUsersPage() {
             // Muat ulang data untuk menampilkan perubahan
             setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
         }
+    };  
+
+
+    const handleInviteUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsInviting(true);
+
+        const { data, error } = await supabase.rpc('invite_new_user', {
+            invite_email: inviteEmail,
+            invite_full_name: inviteFullName,
+            invite_role: inviteRole
+        });
+
+        if (error || (data && !data.success)) {
+            toast.error("Gagal Mengundang User", { description: error?.message || data?.message || "Terjadi kesalahan yang tidak diketahui." });
+        } else {
+            toast.success("Undangan Terkirim!", { description: data.message });
+            // Reset form dan tutup dialog
+            setInviteEmail('');
+            setInviteFullName('');
+            setInviteRole('karyawan');
+            setIsInviteDialogOpen(false);
+            fetchUsers(); // Muat ulang daftar user
+        }
+        setIsInviting(false);
     };
 
     return (
-        <div className="min-h-screen bg-secondary/40 p-4 sm:p-6 lg:p-8">
-            <div className="max-w-7xl mx-auto space-y-6">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-3xl font-bold flex items-center gap-3"><UsersIcon /> Manajemen User</h1>
-                </div>
+        <>
+            {/* --- DIALOG UNTUK UNDANG USER BARU --- */}
+            <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <form onSubmit={handleInviteUser}>
+                        <DialogHeader>
+                            <DialogTitle>Undang Pengguna Baru</DialogTitle>
+                            <DialogDescription>
+                                Masukkan detail pengguna baru. Mereka akan menerima email undangan untuk mengatur password.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <label htmlFor="email">Email</label>
+                                <Input id="email" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required />
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="name">Nama Lengkap</label>
+                                <Input id="name" value={inviteFullName} onChange={(e) => setInviteFullName(e.target.value)} required />
+                            </div>
+                            <div className="space-y-2">
+                                <label>Peran Awal</label>
+                                <Select onValueChange={setInviteRole} defaultValue={inviteRole}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="karyawan">Karyawan</SelectItem>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline" disabled={isInviting}>Batal</Button>
+                            </DialogClose>
+                            <Button type="submit" disabled={isInviting}>
+                                {isInviting ? "Mengundang..." : "Kirim Undangan"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
+            {/* --- HALAMAN UTAMA MANAJEMEN USER --- */}
+            <div className="min-h-screen bg-secondary/40 p-4 sm:p-6 lg:p-8">
+                <div className="max-w-7xl mx-auto space-y-6">
+                    <div className="flex justify-between items-center">
+                        <h1 className="text-3xl font-bold flex items-center gap-3"><UsersIcon /> Manajemen User</h1>
+                        {/* Tombol untuk membuka Dialog */}
+                        <Button variant={'outline'} onClick={() => setIsInviteDialogOpen(true)}>
+                            <UserPlus className="mr-2 h-4 w-4" /> Tambahkan User
+                        </Button>
+                    </div>
                 <Card>
                     <CardHeader>
                         <CardTitle>Daftar Pengguna Sistem</CardTitle>
@@ -127,5 +210,6 @@ export default function ManageUsersPage() {
                 </Card>
             </div>
         </div>
+        </>
     );
 }
