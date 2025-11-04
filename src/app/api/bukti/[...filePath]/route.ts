@@ -1,11 +1,15 @@
-import { createClient } from '@/app/lib/supabase/server'; // Gunakan server client
+import { createClient } from '@/app/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { filePath: string[] } }
+  context: { params: Promise<{ filePath: string[] }> } // <- di sini Promise
 ) {
   const supabase = createClient();
+
+  // Tunggu params dulu
+  const { filePath } = await context.params; // ✅ tambahkan await di sini
+  const filePathStr = filePath.join('/'); // ✅ ubah variabel untuk kejelasan
 
   // 1. Cek sesi user (Keamanan Lapis 1)
   const { data: { user } } = await supabase.auth.getUser();
@@ -25,10 +29,9 @@ export async function GET(
   }
 
   // 3. Ambil file dari storage
-  const filePath = params.filePath.join('/'); // Rekonstruksi path file dari URL
   const { data: blob, error: downloadError } = await supabase.storage
-    .from('bukti-laporan') // Nama bucket private Anda
-    .download(filePath);
+    .from('bukti-laporan')
+    .download(filePathStr);
 
   if (downloadError) {
     console.error('Storage download error:', downloadError);
@@ -36,12 +39,12 @@ export async function GET(
   }
 
   if (!blob) {
-     return new NextResponse('File data empty', { status: 500 });
+    return new NextResponse('File data empty', { status: 500 });
   }
 
-  // 4. Stream file kembali ke browser
+  // 4. Stream file ke browser
   const headers = new Headers();
-  headers.set('Content-Type', blob.type);
+  headers.set('Content-Type', blob.type || 'application/octet-stream');
   headers.set('Content-Length', blob.size.toString());
 
   return new NextResponse(blob, { status: 200, headers });
