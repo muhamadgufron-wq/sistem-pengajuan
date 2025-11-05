@@ -60,7 +60,7 @@ export default function StatusPengajuanPage() {
                         <>
                             {activeTab === 'barang' && (
                                 <div className="space-y-4">
-                                    {pengajuanBarang.length > 0 ? pengajuanBarang.map(item => (
+                                    {pengajuanBarang.length > 0 ? pengajuanBarang.map((item: any) => (
                                         <div key={item.id} className="bg-white p-5 rounded-lg shadow-sm border">
                                             <div className="flex justify-between items-start">
                                                 <div>
@@ -83,7 +83,7 @@ export default function StatusPengajuanPage() {
                             
                             {activeTab === 'uang' && (
                                 <div className="space-y-4">
-                                    {pengajuanUang.length > 0 ? pengajuanUang.map(item => (
+                                    {pengajuanUang.length > 0 ? pengajuanUang.map((item: any) => (
                                         <div key={item.id} className="bg-white p-5 rounded-lg shadow-sm border">
                                             <div className="flex justify-between items-start">
                                                 <div>
