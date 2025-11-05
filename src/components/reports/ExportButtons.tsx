@@ -46,7 +46,7 @@ export default function ExportButtons({ reportData, filters }: ExportProps) {
             const arrayBuffer = await response.arrayBuffer();
 
             const workbook = new ExcelJS.Workbook();
-            await workbook.load(arrayBuffer);
+            await workbook.xlsx.load(arrayBuffer);
 
             // --- KONFIGURASI TEMPLATE ANDA DI SINI ---
             const worksheet = workbook.getWorksheet('Laporan Pengajuan'); // Ganti dengan nama sheet Anda
