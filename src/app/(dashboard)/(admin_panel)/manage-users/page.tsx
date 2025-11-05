@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client';
@@ -9,9 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"; // Tambah DialogTrigger, DialogClose
-import { Input } from "@/components/ui/input"; // Tambah Input
-import Link from 'next/link';
-import { UsersIcon, UserPlus } from 'lucide-react'; // Tambah UserPlus
+import { Input } from "@/components/ui/input";
+import { UsersIcon, UserPlus } from 'lucide-react'; 
 
 interface UserWithRole {
     id: string;
@@ -32,6 +32,34 @@ export default function ManageUsersPage() {
     const [inviteFullName, setInviteFullName] = useState('');
     const [inviteRole, setInviteRole] = useState('karyawan');
     const [isInviting, setIsInviting] = useState(false);
+
+    const handleInviteUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsInviting(true);
+
+        const res = await fetch('/api/invite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                invite_email: inviteEmail,
+                invite_full_name: inviteFullName,
+                invite_role: inviteRole
+            }),
+        });
+
+        const data = await res.json();
+        if(!data.success) {
+            toast.error("Gagal Mengundang User", { description: data.message || "Terjadi kesalahan yang tidak diketahui." });
+        } else {
+            toast.success("Undangan Terkirim!", { description: data.message });
+            setInviteEmail('');
+            setInviteFullName('');
+            setInviteRole('karyawan');
+            setIsInviteDialogOpen(false);
+            fetchUsers(); // Muat ulang daftar user
+        }
+        setIsInviting(false);
+    };
 
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
@@ -81,32 +109,6 @@ export default function ManageUsersPage() {
             setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
         }
     };  
-
-
-    const handleInviteUser = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsInviting(true);
-
-        const { data, error } = await supabase.rpc('invite_new_user', {
-            invite_email: inviteEmail,
-            invite_full_name: inviteFullName,
-            invite_role: inviteRole
-        });
-
-        if (error || (data && !data.success)) {
-            toast.error("Gagal Mengundang User", { description: error?.message || data?.message || "Terjadi kesalahan yang tidak diketahui." });
-        } else {
-            toast.success("Undangan Terkirim!", { description: data.message });
-            // Reset form dan tutup dialog
-            setInviteEmail('');
-            setInviteFullName('');
-            setInviteRole('karyawan');
-            setIsInviteDialogOpen(false);
-            fetchUsers(); // Muat ulang daftar user
-        }
-        setIsInviting(false);
-    };
-
     return (
         <>
             {/* --- DIALOG UNTUK UNDANG USER BARU --- */}
