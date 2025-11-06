@@ -1,10 +1,19 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // wajib pakai service role key
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+  console.log("✅ ENV CHECK:", {
+  url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  key: process.env.SUPABASE_SERVICE_ROLE_KEY ? "Service key detected ✅" : "❌ Not found",
+});
+
+
 
 export async function POST(req: Request) {
   try {
