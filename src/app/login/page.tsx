@@ -40,9 +40,8 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
+            <div className="space-y-2 mt-4">
               <label htmlFor="email-card" className="text-sm font-medium text-gray-700">
-                Masukan email
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -52,7 +51,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
-                  placeholder="email"
+                  placeholder="Masukan email"
                   required
                 />
               </div>
@@ -60,7 +59,6 @@ export default function LoginPage() {
             
             <div className="space-y-2">
               <label htmlFor="password-card" className="text-sm font-medium text-gray-700">
-                Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -70,7 +68,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-12"
-                  placeholder="••••••••"
+                  placeholder="Password"
                   required
                 />
                 <button
