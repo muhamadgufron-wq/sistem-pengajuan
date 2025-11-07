@@ -38,7 +38,37 @@ export default function ManageUsersPage() {
   const [editUser, setEditUser] = useState<UserWithRole | null>(null);
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
+  // 🔹 Ambil data semua user
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase.from('user_profiles_with_email').select('*');
+    if (error) {
+      toast.error("Gagal mengambil data user", { description: error.message });
+    } else {
+      setUsers(data || []);
+    }
+    setIsLoading(false);
+  }, [supabase]);
+
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push('/login'); return; }
+
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      if (!profile || profile.role !== 'superadmin') {
+        toast.error("Akses Ditolak", { description: "Hanya superadmin yang dapat mengakses halaman ini." });
+        router.push('/dashboard');
+        return;
+      }
+      fetchUsers();
+    };
+    checkSuperAdmin();
+  }, [supabase, router, fetchUsers]);
+
+  // 🔹 Undang user baru
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsInviting(true);
@@ -67,47 +97,25 @@ export default function ManageUsersPage() {
     setIsInviting(false);
   };
 
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase.from('user_profiles_with_email').select('*');
-    if (error) {
-      toast.error("Gagal mengambil data user", { description: error.message });
-    } else {
-      setUsers(data || []);
-    }
-    setIsLoading(false);
-  }, [supabase]);
-
-  useEffect(() => {
-    const checkSuperAdmin = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/login'); return; }
-
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-      if (!profile || profile.role !== 'superadmin') {
-        toast.error("Akses Ditolak", { description: "Hanya superadmin yang dapat mengakses halaman ini." });
-        router.push('/dashboard');
-        return;
-      }
-      fetchUsers();
-    };
-    checkSuperAdmin();
-  }, [supabase, router, fetchUsers]);
-
-  // --- Hapus User ---
+  // 🔹 Hapus user
   const handleDeleteUser = async (userId: string) => {
     if (!confirm("Apakah Anda yakin ingin menghapus user ini?")) return;
 
-    const { error } = await supabase.from('profiles').delete().eq('id', userId);
-    if (error) {
-      toast.error("Gagal menghapus user", { description: error.message });
-    } else {
-      toast.success("User berhasil dihapus!");
-      setUsers(users.filter(u => u.id !== userId));
-    }
-  };
+    const res = await fetch('/api/users/delete', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  });
 
-  // --- Edit User ---
+    const data = await res.json();
+    if (!data.success) {
+        toast.error("Gagal menghapus user", { description: data.message });
+    } else {
+        toast.success("User berhasil dihapus sepenuhnya!");
+        fetchUsers();
+    }
+    };
+  // 🔹 Edit user
   const handleOpenEditDialog = (user: UserWithRole) => {
     setEditUser(user);
     setEditName(user.full_name);
@@ -116,22 +124,51 @@ export default function ManageUsersPage() {
   };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editUser) return;
+      e.preventDefault();
+      if (!editUser) return;
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ full_name: editName, role: editRole })
-      .eq('id', editUser.id);
+      setIsUpdating(true); // Aktifkan loading
+      console.log('Mencoba update user:', editUser.id); // [LOG 1]
 
-    if (error) {
-      toast.error("Gagal memperbarui data user", { description: error.message });
-    } else {
+      try {
+      const res = await fetch('/api/users/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+      id: editUser.id,
+      full_name: editName,
+      role: editRole
+      }),
+      });
+
+      console.log('Response status:', res.status); // [LOG 2]
+
+      // Cek jika respons BUKAN 'ok' (misal: 404, 500)
+      if (!res.ok) {
+      const errorData = await res.json();
+      // Lempar error agar ditangkap oleh 'catch'
+      throw new Error(errorData.message || `Server error: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log('Response data:', data); // [LOG 3]
+
+      if (!data.success) {
+      // Ini jika API route Anda mengembalikan { success: false }
+      toast.error("Gagal memperbarui data user", { description: data.message });
+      } else {
       toast.success("Data user berhasil diperbarui!");
-      setUsers(users.map(u => u.id === editUser.id ? { ...u, full_name: editName, role: editRole } : u));
+      fetchUsers();
       setIsEditDialogOpen(false);
-    }
-  };
+      }
+      } catch (error: any) {
+      // Ini akan menangkap error fetch, 500, atau res.json()
+      console.error('Error di handleUpdateUser:', error); // [LOG 4]
+      toast.error("Terjadi Kesalahan Fatal", { description: error.message });
+      } finally {
+      setIsUpdating(false); // Matikan loading
+      }
+      };
 
   return (
     <>
@@ -146,18 +183,18 @@ export default function ManageUsersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="space-y-2">
+              <div>
                 <label>Email</label>
                 <Input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required />
               </div>
-              <div className="space-y-2">
+              <div>
                 <label>Nama Lengkap</label>
-                <Input value={inviteFullName} onChange={(e) => setInviteFullName(e.target.value)} required />
+                <Input value={inviteFullName ?? ''} onChange={(e) => setInviteFullName(e.target.value)} required />
               </div>
-              <div className="space-y-2">
+              <div>
                 <label>Peran Awal</label>
                 <Select onValueChange={setInviteRole} defaultValue={inviteRole}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Pilih peran" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="karyawan">Karyawan</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
@@ -182,31 +219,30 @@ export default function ManageUsersPage() {
               <DialogDescription>Ubah nama lengkap dan peran pengguna di sistem.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="space-y-2">
+              <div>
                 <label>Nama Lengkap</label>
-                <Input value={editName} onChange={(e) => setEditName(e.target.value)} required />
+                <Input value={editName ?? ''} onChange={(e) => setEditName(e.target.value)} required />
               </div>
-              <div className="space-y-2">
+              <div>
                 <label>Peran</label>
                 <Select onValueChange={setEditRole} defaultValue={editRole}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Pilih role" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="karyawan">Karyawan</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="superadmin">Superadmin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="outline">Batal</Button></DialogClose>
-              <Button type="submit">Simpan Perubahan</Button>
+              <Button type="submit" disabled={isUpdating}>{isUpdating ? "Menyimpan..." : "Simpan Perubahan"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* --- HALAMAN UTAMA MANAJEMEN USER --- */}
+      {/* --- HALAMAN UTAMA --- */}
       <div className="min-h-screen bg-secondary/40 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex justify-between items-center">
@@ -234,12 +270,18 @@ export default function ManageUsersPage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow><TableCell colSpan={4} className="text-center h-24">Memuat data pengguna...</TableCell></TableRow>
+                  ) : users.length === 0 ? (
+                    <TableRow><TableCell colSpan={4} className="text-center h-24">Tidak ada data pengguna.</TableCell></TableRow>
                   ) : users.map(user => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.full_name || '-'}</TableCell>
+                      <TableCell>{user.full_name || '-'}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 text-xs rounded-full ${user.role === 'admin' ? 'bg-blue-100 text-blue-800' : user.role === 'superadmin' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          user.role === 'admin' ? 'bg-blue-100 text-blue-800' :
+                          user.role === 'superadmin' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
                           {user.role}
                         </span>
                       </TableCell>
@@ -255,9 +297,6 @@ export default function ManageUsersPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {!isLoading && users.length === 0 && (
-                    <TableRow><TableCell colSpan={4} className="text-center h-24">Tidak ada data pengguna.</TableCell></TableRow>
-                  )}
                 </TableBody>
               </Table>
             </CardContent>
