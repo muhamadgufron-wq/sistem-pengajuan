@@ -60,8 +60,8 @@ export default function RegisterPage() {
 
       <div className="flex min-h-screen flex-col justify-center bg-white px-8 py-12">
         <div className="mx-auto w-full max-w-md">
-          <h2 className="mb-8 text-3xl font-bold text-emerald-600">
-            Buat Akun Baru
+          <h2 className="mb-8 text-3xl font-bold text-emerald-600 justify-center flex">
+            Registrasi
           </h2>
           <p className="mb-8 text-gray-600">
             Selamat datang! Silakan isi detail di bawah untuk buat akun Anda.

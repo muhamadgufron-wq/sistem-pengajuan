@@ -44,18 +44,17 @@ export default function LoginPage() {
     
     if (error) {
       toast.error("Login Gagal", { description: error.message });
-      setIsLoading(false); // Selesai loading jika gagal
+      setIsLoading(false); 
     } else {
       toast.success("Login Berhasil!");
       router.push('/dashboard');
       router.refresh();
-      // 'setIsLoading(false)' tidak perlu jika sukses, karena halaman akan berganti
     }
   };
 
   return (
     <>
-      {/* --- TAMBAHAN: Loading Overlay --- */}
+      {/* --- Loading Overlay --- */}
       {isNavigating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
           <LoaderCircle className="w-12 h-12 animate-spin text-emerald-600" />
@@ -75,7 +74,7 @@ export default function LoginPage() {
               Sistem Pengajuan Barang dan Uang
             </h1>
             <p className="mt-4 text-lg text-emerald-100">
-              Sistem pengajuan terpusat – transparan, cepat, dan profesional
+              Sistem pengajuan terpusat transparan, cepat, dan profesional
             </p>
           </div>
         </div>
@@ -96,7 +95,7 @@ export default function LoginPage() {
           </div>
 
           <div className="mx-auto w-full max-w-md">
-            <h2 className="mb-8 text-3xl font-bold text-emerald-600">
+            <h2 className="mb-8 text-3xl font-bold text-emerald-600 justify-center flex">
               Login
             </h2>
 
