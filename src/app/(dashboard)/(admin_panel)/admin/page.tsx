@@ -2,115 +2,178 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/app/lib/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, Clock, CheckCircle, XCircle, CalendarDays } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Users, FileText, Banknote, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-// Tipe untuk data statistik
-interface DashboardStats {
-    total_users: number;
-    total_admins: number;
-    submissions_this_week: number;
-    pending_submissions: number;
-    approved_submissions_total: number;
-    rejected_submissions_total: number;
+// Tipe untuk data 4 kartu di atas
+interface DashboardStatCards {
+  barang_minggu_ini: number;
+  uang_minggu_ini: number;
+  total_uang_diajukan: number;
+  total_karyawan: number;
 }
 
-// Komponen untuk kartu statistik
-const StatCard = ({ title, value, icon, description }: { title: string, value: string | number, icon: React.ReactNode, description: string }) => (
-    <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            {icon}
-        </CardHeader>
-        <CardContent>
-            <div className="text-2xl font-bold">{value}</div>
-            <p className="text-xs text-muted-foreground">{description}</p>
-        </CardContent>
-    </Card>
+// Tipe untuk data chart mingguan
+interface WeeklyChartData {
+  name: string; // 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'
+  barang: number;
+  uang: number;
+}
+
+// Tipe untuk data transaksi terbaru
+interface RecentTransaction {
+  id: string;
+  full_name: string;
+  tipe_pengajuan: string;
+  total_estimasi_biaya: number;
+  status: string;
+}
+
+// Komponen Kartu Statistik (didesain ulang)
+const StatCard = ({ title, value, percentage, icon }: {
+  title: string;
+  value: string;
+  percentage: string;
+  icon: React.ReactNode;
+}) => (
+  <Card>
+    <CardHeader className="pb-2">
+      <div className="flex justify-between items-start">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon}
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{value}</div>
+      <p className="text-xs text-muted-foreground flex items-center gap-1">
+        {percentage.startsWith('-') ? (
+          <TrendingDown className="h-3 w-3 text-red-500" />
+        ) : (
+          <TrendingUp className="h-3 w-3 text-emerald-500" />
+        )}
+        {percentage}
+      </p>
+    </CardContent>
+  </Card>
 );
 
-
 export default function AdminDashboardPage() {
-    const supabase = createClient();
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+  const supabase = createClient();
+  const [statCards, setStatCards] = useState<DashboardStatCards | null>(null);
+  const [chartData, setChartData] = useState<WeeklyChartData[]>([]);
+  const [transactions, setTransactions] = useState<RecentTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            setIsLoading(true);
-            const { data, error } = await supabase.rpc('get_admin_dashboard_stats');
-            if (error) {
-                console.error("Gagal mengambil statistik:", error);
-            } else {
-                setStats(data);
-            }
-            setIsLoading(false);
-        };
-        fetchStats();
-    }, [supabase]);
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setIsLoading(true);
+      
+      // Kita panggil 3 fungsi RPC secara bersamaan
+      const [statsRes, chartRes, transRes] = await Promise.all([
+        supabase.rpc('get_dashboard_stat_cards'),
+        supabase.rpc('get_dashboard_overview_chart'),
+        supabase.rpc('get_recent_transactions')
+      ]);
+
+      // 1. Set data Stat Cards
+      if (statsRes.error) {
+        toast.error("Gagal mengambil data kartu", { description: statsRes.error.message });
+      } else {
+        setStatCards(statsRes.data[0]); // Ambil baris pertama
+      }
+      
+      // 2. Set data Chart
+      if (chartRes.error) {
+        toast.error("Gagal mengambil data chart", { description: chartRes.error.message });
+      } else {
+        setChartData(chartRes.data);
+      }
+      setIsLoading(false);
+    };
     
-    // Data untuk grafik
-    const chartData = [
-        { name: 'Status', Pending: stats?.pending_submissions, Disetujui: stats?.approved_submissions_total, Ditolak: stats?.rejected_submissions_total },
-    ];
-
-    if (isLoading) {
-        return <div className="text-center p-10">Memuat data dashboard...</div>;
-    }
-
+    fetchAllData();
+  }, [supabase]);
+  
+  if (isLoading) {
     return (
-        <div className="space-y-6">
-            <h1 className="text-3xl font-bold">Dashboard Admin</h1>
-            
-            {/* Grid untuk Kartu Statistik */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard 
-                    title="Total Pengajuan Minggu Ini"
-                    value={stats?.submissions_this_week ?? 0}
-                    icon={<CalendarDays className="h-4 w-4 text-muted-foreground" />}
-                    description="Jumlah pengajuan barang & uang"
-                />
-                <StatCard 
-                    title="Pengajuan Menunggu"
-                    value={stats?.pending_submissions ?? 0}
-                    icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-                    description="Pengajuan yang perlu di-review"
-                />
-                 <StatCard 
-                    title="Total Karyawan"
-                    value={stats?.total_users ?? 0}
-                    icon={<Users className="h-4 w-4 text-muted-foreground" />}
-                    description="Jumlah pengguna dengan peran karyawan"
-                />
-                 <StatCard 
-                    title="Total Admin"
-                    value={stats?.total_admins ?? 0}
-                    icon={<Users className="h-4 w-4 text-muted-foreground" />}
-                    description="Jumlah pengguna dengan peran admin"
-                />
-            </div>
-            
-            {/* Kartu untuk Grafik */}
-            <Card className="col-span-1 lg:col-span-2">
-                <CardHeader>
-                    <CardTitle>Ringkasan Status Semua Pengajuan</CardTitle>
-                </CardHeader>
-                <CardContent className="pl-2">
-                    <ResponsiveContainer width="100%" height={350}>
-                        <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="Pending" fill="#f59e0b" name="Menunggu" />
-                            <Bar dataKey="Disetujui" fill="#10b981" name="Disetujui" />
-                            <Bar dataKey="Ditolak" fill="#ef4444" name="Ditolak" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-        </div>
+      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+        <div className="text-center p-10">Memuat data dashboard...</div>
+      </div>
     );
+  }
+
+  return (
+    // Kita gunakan padding `p-6` atau `p-8` seperti di desain
+    <div className="p-6 md:p-8 space-y-6">
+      
+      {/* Grid untuk 4 Kartu Statistik */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard 
+          title="Pengajuan Barang Minggu Ini"
+          value={statCards?.barang_minggu_ini?.toString() ?? '0'}
+          percentage="+20% vs mgg lalu" // Ganti dengan data % jika ada
+          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+        />
+        <StatCard 
+          title="Pengajuan Uang Minggu Ini"
+          value={statCards?.uang_minggu_ini?.toString() ?? '0'}
+          percentage="+5% vs mgg lalu"
+          icon={<Banknote className="h-4 w-4 text-muted-foreground" />}
+        />
+        <StatCard 
+          title="Total Uang Diajukan"
+          value={`Rp${new Intl.NumberFormat('id-ID').format(statCards?.total_uang_diajukan ?? 0)}`}
+          percentage="Total pengajuan minggu ini  "
+          icon={<Wallet className="h-4 w-4 text-muted-foreground" />}
+        />
+         <StatCard 
+          title="Total Karyawan"
+          value={statCards?.total_karyawan?.toString() ?? '0'}
+          percentage="Jumlah user terdaftar"
+          icon={<Users className="h-4 w-4 text-muted-foreground" />}
+        />
+      </div>
+      
+      {/* Grid untuk Chart & Transaksi */}
+        <div className="grid gap-4 lg:grid-cols-2">
+        
+        {/* Kolom Kiri: Overview Chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Overview Bulanan</CardTitle>
+            <CardDescription>Grafik pengajuan barang uang per minggu di bulan ini.</CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="#888888" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                />
+                <YAxis 
+                  stroke="#888888" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickFormatter={(value) => `${value}`}
+                />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} 
+                />
+                <Legend />
+                <Bar dataKey="barang" name="Barang" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="uang" name="Uang" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }

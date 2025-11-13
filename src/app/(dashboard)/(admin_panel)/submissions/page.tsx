@@ -29,7 +29,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     return <span className={`px-3 py-1 text-xs font-medium rounded-full ${statusClasses}`}>{status}</span>;
 };
 
-// Mendefinisikan tipe data (dengan penambahan 'kategori')
+// ... (Interface Anda tetap sama)
 interface PengajuanBarang {
     id: number;
     created_at: string;
@@ -42,7 +42,6 @@ interface PengajuanBarang {
     catatan_admin: string;
     kategori: string | null;
 }
-
 interface PengajuanUang {
     bukti_laporan_url: any;
     id: number;
@@ -58,41 +57,35 @@ interface PengajuanUang {
     catatan_admin: string;
     kategori: string | null;
 }
-
 interface ViewingItem {
   id?: string | number;
   bukti_laporan_url?: string;
   [key: string]: any;
 }
-
-
 type PengajuanItem = PengajuanBarang | PengajuanUang;
 
+
 export default function AdminPage() {
+    // ... (Semua state Anda di sini tetap sama)
     const supabase = createClient();
     const router = useRouter();
-    
     const [pengajuanBarang, setPengajuanBarang] = useState<PengajuanBarang[]>([]);
     const [pengajuanUang, setPengajuanUang] = useState<PengajuanUang[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('barang');
-    
-    // State untuk filter
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [kategoriFilter, setKategoriFilter] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-    
-    // State untuk Dialog Update (diganti nama dari selectedItem)
     const [editingItem, setEditingItem] = useState<PengajuanItem | null>(null);
     const [newStatus, setNewStatus] = useState('');
     const [adminNote, setAdminNote] = useState('');
     const [newCategory, setNewCategory] = useState('');
-
-    // State untuk Dialog Detail
     const [viewingItem, setViewingItem] = useState<PengajuanItem | null>(null);
+    const [buktiItem, setBuktiItem] = useState<PengajuanUang | null>(null);
 
+    // ... (Semua logika/fungsi Anda di sini tetap sama)
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         const rpcParams = {
@@ -102,13 +95,10 @@ export default function AdminPage() {
             start_date_filter: startDate ? format(startDate, 'yyyy-MM-dd') : null,
             end_date_filter: endDate ? format(endDate, 'yyyy-MM-dd') : null,
         };
-
         const { data: barangData, error: barangError } = await supabase.rpc('get_all_barang_submissions', rpcParams);
         const { data: uangData, error: uangError } = await supabase.rpc('get_all_uang_submissions', rpcParams);
-        
         if(barangError) toast.error("Error fetching barang", { description: barangError.message });
         if(uangError) toast.error("Error fetching uang", { description: uangError.message });
-
         setPengajuanBarang(barangData || []);
         setPengajuanUang(uangData || []);
         setIsLoading(false);
@@ -118,7 +108,6 @@ export default function AdminPage() {
         const checkAdminAndFetchData = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) { router.push('/login'); return; }
-
             const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
             if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
                 router.push('/dashboard');
@@ -132,12 +121,10 @@ export default function AdminPage() {
     const handleUpdate = async () => {
         if (!editingItem) return;
         const tableName = activeTab === 'barang' ? 'pengajuan_barang' : 'pengajuan_uang';
-
         const { error } = await supabase.from(tableName)
             .update({ status: newStatus, catatan_admin: adminNote, kategori: newCategory })
             .eq('id', editingItem.id);
-
-        if (error) { toast.error("Update Gagal", { description: error.message }); }
+        if (error) { toast.error("Update Gagal", { description: error.message }); } 
         else {
             toast.success("Update Berhasil");
             setEditingItem(null);
@@ -161,18 +148,15 @@ export default function AdminPage() {
     };
 
     const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-
     const displayedData = activeTab === 'barang' ? pengajuanBarang : pengajuanUang;
-
     const kategoriBarangOptions = [{value: 'kantor', label: 'Kantor'}, {value: 'gudang', label: 'Gudang'}, {value: 'studio', label: 'Studio'}];
     const kategoriUangOptions = [{value: 'operasional', label: 'Operasional'}, {value: 'vendor', label: 'Vendor'}];
-    
     const kategoriFilterOptions = activeTab === 'barang' ? kategoriBarangOptions : kategoriUangOptions;
     const kategoriDialogOptions = activeTab === 'barang' ? kategoriBarangOptions : kategoriUangOptions;
 
     return (
         <>
-            {/* Dialog untuk Update Status */}
+            {/* ... (Dialog Update Status Anda tetap sama) ... */}
             <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -190,7 +174,6 @@ export default function AdminPage() {
                              <p className="text-sm text-muted-foreground">Rp {Number(editingItem.jumlah_uang).toLocaleString('id-ID')} - {editingItem.keperluan}</p>
                         )}
                     </div>
-                    
                     <div className="grid gap-4 py-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Kategori</label>
@@ -223,7 +206,7 @@ export default function AdminPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog untuk Melihat Detail */}
+            {/* ... (Dialog Lihat Detail Anda tetap sama, tanpa bukti) ... */}
             <Dialog open={!!viewingItem} onOpenChange={(open) => !open && setViewingItem(null)}>
                 <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
@@ -245,47 +228,65 @@ export default function AdminPage() {
                             <><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Nominal</span><span className="col-span-2 font-medium text-lg">Rp {Number(viewingItem.jumlah_uang).toLocaleString('id-ID')}</span></div><div className="grid grid-cols-3 items-start gap-4 border-b pb-2"><span className="text-muted-foreground">Keperluan</span><span className="col-span-2">{viewingItem.keperluan}</span></div><div className="grid grid-cols-3 items-center gap-4 border-b pb-2 pt-4"><span className="text-muted-foreground col-span-3 font-bold text-primary">Info Rekening</span></div><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Bank</span><span className="col-span-2 font-medium">{viewingItem.nama_bank}</span></div><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">No. Rekening</span><span className="col-span-2 font-medium">{viewingItem.nomor_rekening}</span></div><div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Atas Nama</span><span className="col-span-2 font-medium">{viewingItem.atas_nama}</span></div></>
                         )}
                         <div className="grid grid-cols-3 items-start gap-4 pt-2"><span className="text-muted-foreground">Catatan Admin</span><div className="col-span-2 text-sm italic bg-yellow-50 p-2 rounded-md">{viewingItem?.catatan_admin || 'Belum ada catatan.'}</div></div>
-
-                        {activeTab === 'uang' && viewingItem && 'bukti_laporan_url' in viewingItem && viewingItem.bukti_laporan_url && (
-                                <><div className="grid grid-cols-3 items-start gap-4 pt-4 border-t mt-4">
-                                    <span className="text-muted-foreground font-semibold pt-1">Bukti Laporan</span>
-                                    <div className="col-span-2">
-                                        {(() => {
-                                        const buktiPath = (viewingItem as PengajuanUang).bukti_laporan_url!;
-                                        const apiBuktiUrl = `/api/bukti/${buktiPath}`;
-
-                                        return /\.(jpg|jpeg|png|gif)$/i.test(buktiPath)
-                                            ? (
-                                            <a
-                                                href={apiBuktiUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="block border rounded-md overflow-hidden hover:opacity-80 transition-opacity"
-                                            >
-                                                <img
-                                                src={apiBuktiUrl}
-                                                alt={`Bukti ${viewingItem.id}`}
-                                                className="max-w-xs max-h-40 object-contain"
-                                                />
-                                            </a>
-                                            )
-                                            : (
-                                            <p className="text-sm italic text-muted-foreground pt-1">Belum ada laporan</p>
-                                            )
-                                        })()}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                </div>
+                    </div>
                     <DialogFooter>
                         <Button variant="destructive" onClick={() => setViewingItem(null)}>Tutup</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
+            {/* ... (Dialog Bukti Laporan Anda tetap sama) ... */}
+            <Dialog open={!!buktiItem} onOpenChange={(open) => !open && setBuktiItem(null)}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl">Bukti Laporan</DialogTitle>
+                        <DialogDescription>
+                            Bukti laporan untuk pengajuan #{buktiItem?.id} oleh {buktiItem?.full_name}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 flex justify-center items-center min-h-[200px]">
+                        {buktiItem?.bukti_laporan_url ? (
+                            (() => {
+                                const buktiPath = buktiItem.bukti_laporan_url!;
+                                const apiBuktiUrl = `/api/bukti/${buktiPath}`;
+                                if (/\.(jpg|jpeg|png|gif)$/i.test(buktiPath)) {
+                                    return (
+                                        <a href={apiBuktiUrl} target="_blank" rel="noopener noreferrer" className="block border rounded-md overflow-hidden">
+                                            <img
+                                                src={apiBuktiUrl}
+                                                alt={`Bukti ${buktiItem.id}`}
+                                                className="w-full h-auto object-contain max-h-[60vh]"
+                                            />
+                                        </a>
+                                    );
+                                } else {
+                                    return (
+                                        <Button asChild>
+                                            <a href={apiBuktiUrl} target="_blank" rel="noopener noreferrer">
+                                                <ExternalLink className="mr-2 h-4 w-4" />
+                                                Lihat File Laporan
+                                            </a>
+                                        </Button>
+                                    );
+                                }
+                            })()
+                        ) : (
+                            <p className="text-center text-muted-foreground py-10 font-medium">
+                                Belum melakukan laporan
+                            </p>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setBuktiItem(null)}>Tutup</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+
+            {/* Layout Utama Halaman */}
             <div className="h-full flex flex-col gap-6">
                 <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border">
+                    {/* ... (Bagian Filter Anda tetap sama) ... */}
                     <div className="flex-shrink-0 border-b pb-6">
                         <CardHeader>
                             <CardTitle className="text-xl font-semibold flex items-center gap-2 text-primary">
@@ -308,48 +309,49 @@ export default function AdminPage() {
                                             <SelectItem value="pending">Pending</SelectItem>
                                             <SelectItem value="disetujui">Disetujui</SelectItem>
                                             <SelectItem value="ditolak">Ditolak</SelectItem>
-                                            </SelectContent>
-                                            </Select>
-                                            <Select onValueChange={(value) => setKategoriFilter(value === 'all' ? '' : value)} value={kategoriFilter || 'all'}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Semua Kategori" />
-                                                </SelectTrigger>
+                                        </SelectContent>
+                                    </Select>
+                                    <Select onValueChange={(value) => setKategoriFilter(value === 'all' ? '' : value)} value={kategoriFilter || 'all'}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Semua Kategori" />
+                                        </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Semua Kategori
-                                                </SelectItem>{kategoriFilterOptions.map(opt => 
-                                                <SelectItem key={opt.value} value={opt.value}>{opt.label}
-                                                </SelectItem>)}
+                                            </SelectItem>{kategoriFilterOptions.map(opt => 
+                                            <SelectItem key={opt.value} value={opt.value}>{opt.label}
+                                            </SelectItem>)}
                                         </SelectContent>
-                                            </Select>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant={"outline"} className="w-[180px] justify-start text-left font-normal">
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />{startDate ? format(startDate, "PPP") : <span>Dari Tanggal</span>}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0">
-                                                        <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
-                                                    </PopoverContent>
-                                            </Popover>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant={"outline"} className="w-[180px] justify-start text-left font-normal">
-                                                        <CalendarIcon className="mr-2 h-4 w-4" />{endDate ? format(endDate, "PPP") : <span>Sampai Tanggal</span>}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0">
-                                                <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
-                                            </PopoverContent>
-                                            </Popover>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <Button onClick={fetchData}><SearchIcon className="mr-2 h-4 w-4" /> Terapkan</Button>
-                                            <Button onClick={handleFilterReset} variant="outline"><RefreshCcwIcon className="mr-2 h-4 w-4" /> Reset</Button>
-                                        </div>
-                                    </div>        
-                                </CardContent>
-                            </div>
+                                    </Select>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant={"outline"} className="w-[180px] justify-start text-left font-normal">
+                                            <CalendarIcon className="mr-2 h-4 w-4" />{startDate ? format(startDate, "PPP") : <span>Dari Tanggal</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant={"outline"} className="w-[180px] justify-start text-left font-normal">
+                                            <CalendarIcon className="mr-2 h-4 w-4" />{endDate ? format(endDate, "PPP") : <span>Sampai Tanggal</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <Button onClick={fetchData}><SearchIcon className="mr-2 h-4 w-4" /> Terapkan</Button>
+                                    <Button onClick={handleFilterReset} variant="outline"><RefreshCcwIcon className="mr-2 h-4 w-4" /> Reset</Button>
+                                </div>
+                            </div>        
+                        </CardContent>
+                    </div>
                     
+                    {/* ... (Bagian Tab Anda tetap sama) ... */}
                     <div className="flex-1 flex flex-col overflow-hidden">
                         <CardHeader className="p-0 flex-shrink-0">
                             <nav className="px-6">
@@ -360,45 +362,110 @@ export default function AdminPage() {
                             </nav>
                         </CardHeader>
 
-                    <CardContent className="p-0 flex-1 justify-between">
-                        <Table>
-                            <TableHeader className="sticky top-0 bg-card/80 backdrop-blur-sm z-10">
-                                <TableRow>
-                                    <TableHead>Pemohon</TableHead>
-                                    <TableHead>Detail Pengajuan</TableHead>
-                                    <TableHead>Tanggal</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>{isLoading ? ( 
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">Memuat...</TableCell>
-                                </TableRow> 
-                                ) : displayedData.length === 0 ? ( 
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">Tidak ada data.</TableCell>
+                        {/* 🔽🔽 PERUBAHAN UTAMA PADA TABEL (6 KOLOM) 🔽🔽 */}
+                        <CardContent className="p-0 flex-1 overflow-y-auto">
+                            <Table>
+                                <TableHeader className="sticky top-0 bg-card/80 backdrop-blur-sm z-10">
+                                    <TableRow>
+                                        {/* Menambahkan padding horizontal 'px-6' */}
+                                        <TableHead className="px-6">Pemohon</TableHead>
+                                        <TableHead className="px-6">Detail Pengajuan</TableHead>
+                                        <TableHead className="px-6">Kategori</TableHead>
+                                        <TableHead className="px-6">Tanggal</TableHead>
+                                        <TableHead className="px-6">Status</TableHead>
+                                        <TableHead className="px-6 text-right">Aksi</TableHead>
                                     </TableRow>
-                                 ) : (displayedData.map(item => (<TableRow key={item.id} onClick={() => setViewingItem(item)} className="cursor-pointer hover:bg-muted/50">
-                                    <TableCell className="font-medium">{item.full_name || 'Tanpa Nama'}</TableCell>
-                                    <TableCell>
-                                        <div className="font-medium">{activeTab === 'barang' ? `${(item as PengajuanBarang).nama_barang} (${(item as PengajuanBarang).jumlah})` : `Rp ${Number((item as PengajuanUang).jumlah_uang).toLocaleString('id-ID')}`}</div>
-                                            <div className="text-xs text-muted-foreground mt-1">{item.kategori ? (<span className="px-2 py-0.5 bg-sky-100 text-sky-800 rounded-full">{item.kategori}</span>) : (<span className="italic">Belum Dikategorikan</span>)}</div>
-                                    </TableCell>
-                                    <TableCell>{formatDate(item.created_at)}</TableCell>
-                                    <TableCell>
-                                        <StatusBadge status={item.status} />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openUpdateDialog(item as PengajuanItem); }}>Update</Button>
-                                    </TableCell>
-                                </TableRow>)))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </div>
-            </Card>        
-        </div>
-    </>
-);
+                                </TableHeader>
+                                <TableBody>{isLoading ? ( 
+                                    <TableRow>
+                                        {/* ❗️ colSpan diubah menjadi 6 */}
+                                        <TableCell colSpan={6} className="h-24 text-center px-6 py-4">Memuat...</TableCell>
+                                    </TableRow> 
+                                    ) : displayedData.length === 0 ? ( 
+                                    <TableRow>
+                                        {/* ❗️ colSpan diubah menjadi 6 */}
+                                        <TableCell colSpan={6} className="h-24 text-center px-6 py-4">Tidak ada data.</TableCell>
+                                    </TableRow>
+                                    ) : (displayedData.map(item => (
+                                      <TableRow 
+                                        key={item.id} 
+                                        onClick={() => setViewingItem(item)} // Klik baris untuk detail
+                                        className="cursor-pointer hover:bg-muted/50"
+                                      >
+                                        
+                                        {/* 1. Kolom Pemohon (dengan padding) */}
+                                        <TableCell className="px-6 py-4 font-medium">{item.full_name || 'Tanpa Nama'}</TableCell>
+                                        
+                                        {/* 2. Kolom Detail Pengajuan (BARU) */}
+                                        <TableCell className="px-6 py-4">
+                                            <div className="font-medium">
+                                                {activeTab === 'barang' 
+                                                    ? `${(item as PengajuanBarang).nama_barang} (${(item as PengajuanBarang).jumlah} unit)` 
+                                                    : `Rp ${Number((item as PengajuanUang).jumlah_uang).toLocaleString('id-ID')}`}
+                                            </div>
+                                            {/* Menambahkan detail keperluan untuk pengajuan uang */}
+                                            {activeTab === 'uang' && (
+                                                <div className="text-xs text-muted-foreground truncate w-40" title={(item as PengajuanUang).keperluan}>
+                                                    {(item as PengajuanUang).keperluan}
+                                                </div>
+                                            )}
+                                        </TableCell>
+
+                                        {/* 3. Kolom Kategori */}
+                                        <TableCell className="px-6 py-4">
+                                          {item.kategori ? (
+                                            <span className="px-2 py-0.5 bg-sky-100 text-sky-800 rounded-full text-xs font-medium">
+                                              {item.kategori}
+                                            </span>
+                                          ) : (
+                                            <span className="italic text-muted-foreground text-xs">Belum Ada</span>
+                                          )}
+                                        </TableCell>
+                                        
+                                        {/* 4. Kolom Tanggal */}
+                                        <TableCell className="px-6 py-4">{formatDate(item.created_at)}</TableCell>
+
+                                        {/* 5. Kolom Status */}
+                                        <TableCell className="px-6 py-4">
+                                            <StatusBadge status={item.status} />
+                                        </TableCell>
+                                        
+                                        {/* 6. Kolom Aksi */}
+                                        <TableCell className="px-6 py-4 text-right space-x-2">
+                                            {/* Tombol Lihat Bukti (Hanya untuk tab 'uang') */}
+                                            {activeTab === 'uang' && (
+                                              <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                onClick={(e) => {
+                                                  e.stopPropagation(); // Mencegah dialog detail terbuka
+                                                  setBuktiItem(item as PengajuanUang); // Buka dialog bukti
+                                                }}
+                                              >
+                                                Lihat Bukti
+                                              </Button>
+                                            )}
+
+                                            {/* Tombol Update */}
+                                            <Button 
+                                                variant="default" 
+                                                size="sm" 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation();
+                                                    openUpdateDialog(item as PengajuanItem); 
+                                                }}>
+                                                Update
+                                            </Button>
+                                        </TableCell>
+
+                                    </TableRow>)))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                        {/* 🔼🔼 AKHIR PERUBAHAN 🔼🔼 */}
+                    </div>
+                </Card> 
+            </div>
+        </>
+    );
 }
