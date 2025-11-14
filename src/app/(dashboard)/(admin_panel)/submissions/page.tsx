@@ -147,7 +147,7 @@ export default function AdminPage() {
         
         const tableName = activeTab === 'barang' ? 'pengajuan_barang' : 'pengajuan_uang';
 
-        let updateData: { [key: string]: any } = {
+        const updateData: { [key: string]: any } = {
             status: newStatus,
             catatan_admin: adminNote,
             kategori: newCategory
