@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Sistem Pengajuan",
-  description: "Dibangun dengan Next.js dan Supabase",
+  description: "Sistem pengajuan terpusat transparan, cepat, dan profesional",
 };
 
 export default function RootLayout({
