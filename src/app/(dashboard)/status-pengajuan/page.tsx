@@ -87,13 +87,31 @@ export default function StatusPengajuanPage() {
                                         <div key={item.id} className="bg-white p-5 rounded-lg shadow-sm border">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <p className="font-bold text-lg text-gray-800">Rp {Number(item.jumlah_uang).toLocaleString('id-ID')}</p>
+                                                    <div>
+                                                        {
+                                                                (item.status.toLowerCase() === 'disetujui' && item.jumlah_disetujui != null && item.jumlah_disetujui !== item.jumlah_uang)
+                                                            ? (
+                                                                <>
+                                                                <p className="font-bold text-lg text-gray-800">Rp {Number(item.jumlah_disetujui).toLocaleString('id-ID')}
+                                                                <span className="text-sm text-emerald-500 ml-1">(Disetujui)</span>
+                                                                </p>
+
+                                                                <p className="text-sm text-muted-foreground line-through">
+                                                                        (Diminta: Rp {Number(item.jumlah_uang).toLocaleString('id-ID')})
+                                                                </p>
+                                                                </>
+                                                            ) : (
+                                                                <p className="font-bold text-lg text-gray-800">
+                                                                    Rp {Number(item.jumlah_uang).toLocaleString('id-ID')}
+                                                                </p>
+                                                            )
+                                                        }
+                                                    </div>
                                                     <p className="text-sm text-gray-600 mt-1">{item.keperluan}</p>
-                                                    <p className="text-sm text-gray-500 mt-2">{item.nama_bank} - {item.nomor_rekening} (a.n {item.atas_nama})</p>
+                                                        <p className="text-sm text-gray-500 mt-2">{item.nama_bank} - {item.nomor_rekening} (a.n {item.atas_nama})</p>
+                                                    </div>
+                                                    <StatusBadge status={item.status} />
                                                 </div>
-                                                <StatusBadge status={item.status} />
-                                            </div>
-                                            {/* --- TAMPILKAN CATATAN ADMIN --- */}
                                             {item.catatan_admin && (
                                                 <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 text-sm">
                                                     <strong>Catatan Admin:</strong> {item.catatan_admin}

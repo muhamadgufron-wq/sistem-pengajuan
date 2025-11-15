@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/app/lib/supabase/client';
 import { toast } from "sonner";
-import { format, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
+import { format } from 'date-fns';
 import { id as indonesiaLocale } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input'; // Untuk file input
 import { UploadCloud, CheckCircle, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
-import { error } from 'console';
+// ❗️ 'error' dari 'console' tidak perlu di-import
+// import { error } from 'console'; 
 
 // Tipe data spesifik
 interface ReportItem {
@@ -27,19 +28,20 @@ export default function LaporPenggunaanPage() {
     const supabase = createClient();
     const [itemsToReport, setItemsToReport] = useState<ReportItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [uploadingId, setUploadingId] = useState<number | null>(null); // Track item yang sedang diupload
-    const fileInputRef = useRef<HTMLInputElement>(null); // Ref untuk file input tersembunyi
+    const [uploadingId, setUploadingId] = useState<number | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Hitung rentang tanggal minggu lalu (tidak berubah)
-    const today = new Date();
-    const startOfLastWeek = startOfWeek(subWeeks(today, 1), { weekStartsOn: 1 });
-    const endOfLastWeek = endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 });
-    const dateRangeString = `${format(startOfLastWeek, 'dd MMM yyyy', { locale: indonesiaLocale })} - ${format(endOfLastWeek, 'dd MMM yyyy', { locale: indonesiaLocale })}`;
+    // 🔽 --- LOGIKA TANGGAL INI TIDAK DIPERLUKAN LAGI --- 🔽
+    // const today = new Date();
+    // const startOfLastWeek = startOfWeek(subWeeks(today, 1), { weekStartsOn: 1 });
+    // const endOfLastWeek = endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 });
+    // const dateRangeString = `${format(startOfLastWeek, 'dd MMM yyyy', { locale: indonesiaLocale })} - ${format(endOfLastWeek, 'dd MMM yyyy', { locale: indonesiaLocale })}`;
 
     const fetchItemsToReport = async () => {
         setIsLoading(true);
-        // Panggil RPC baru
-        const { data, error } = await supabase.rpc('get_my_last_week_uang_submissions_for_reporting');
+        // 🔽 --- PANGGIL RPC BARU --- 🔽
+        const { data, error } = await supabase.rpc('get_my_reportable_submissions');
+        
         if (error) {
             toast.error("Gagal mengambil data", { description: error.message });
         } else {
@@ -50,7 +52,7 @@ export default function LaporPenggunaanPage() {
 
     useEffect(() => {
         fetchItemsToReport();
-    }, [supabase]);
+    }, [supabase]); // Dependensi [supabase] sudah cukup
 
     const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>, item: ReportItem) => {
         const file = event.target.files?.[0];
@@ -65,7 +67,7 @@ export default function LaporPenggunaanPage() {
         }
 
         const fileExt = file.name.split('.').pop();
-        const filePath = `${user.id}/${item.id}-${Date.now()}.${fileExt}`; // Path unik: userId/itemId-timestamp.ext
+        const filePath = `${user.id}/${item.id}-${Date.now()}.${fileExt}`;
 
         try {
             // 1. Upload ke Storage
@@ -80,8 +82,10 @@ export default function LaporPenggunaanPage() {
             // 2. Update database
             const { error: dbError } = await supabase
                 .from('pengajuan_uang')
-                .update({ bukti_laporan_url: fileUrlToSave, 
-                    laporan_submitted: true })
+                .update({ 
+                    bukti_laporan_url: fileUrlToSave, 
+                    laporan_submitted: true  // Pastikan ini di-set true
+                })
                 .eq('id', item.id)
                 .eq('user_id', user.id);
 
@@ -94,7 +98,6 @@ export default function LaporPenggunaanPage() {
             toast.error("Upload Gagal", { description: error.message });
         } finally {
             setUploadingId(null);
-            // Reset file input value agar bisa upload file yang sama lagi
             if(fileInputRef.current) fileInputRef.current.value = '';
         }
     };
@@ -104,8 +107,9 @@ export default function LaporPenggunaanPage() {
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold">Lapor Penggunaan Dana</h1>
+                    {/* 🔽 Deskripsi Diubah 🔽 */}
                     <p className="text-muted-foreground">
-                        Unggah bukti penggunaan dana untuk periode: <span className="font-semibold">{dateRangeString}</span>
+                        Unggah bukti penggunaan untuk semua pengajuan dana yang telah disetujui.
                     </p>
                 </div>
                  <Button variant="ghost" asChild>
@@ -119,7 +123,8 @@ export default function LaporPenggunaanPage() {
                  <Card className="text-center p-10">
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                     <CardTitle>Semua Sudah Dilaporkan!</CardTitle>
-                    <CardDescription className="mt-2">Tidak ada pengajuan uang dari minggu lalu yang perlu dilaporkan saat ini.</CardDescription>
+                    {/* 🔽 Deskripsi Diubah 🔽 */}
+                    <CardDescription className="mt-2">Tidak ada pengajuan uang yang perlu dilaporkan saat ini.</CardDescription>
                 </Card>
             ) : (
                 <div className="space-y-4">
@@ -128,7 +133,6 @@ export default function LaporPenggunaanPage() {
                         type="file"
                         ref={fileInputRef}
                         onChange={(e) => {
-                            // Cari item yang sedang 'aktif' untuk upload
                             const activeItem = itemsToReport.find(item => item.id === uploadingId);
                             if (activeItem) handleFileSelect(e, activeItem);
                         }}
@@ -141,7 +145,8 @@ export default function LaporPenggunaanPage() {
                             <CardHeader>
                                 <CardTitle className="text-lg">Pengajuan ID: {item.id}</CardTitle>
                                 <CardDescription>
-                                    {format(new Date(item.created_at), 'dd MMM yyyy')} - Rp {item.jumlah_uang.toLocaleString('id-ID')}
+                                    {format(new Date(item.created_at), 'dd MMM yyyy', { locale: indonesiaLocale })} 
+                                    - Rp {item.jumlah_uang.toLocaleString('id-ID')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -151,8 +156,8 @@ export default function LaporPenggunaanPage() {
                             <CardFooter className="flex justify-end">
                                 <Button
                                     onClick={() => {
-                                        setUploadingId(item.id); // Tandai item ini aktif
-                                        fileInputRef.current?.click(); // Picu klik pada input file tersembunyi
+                                        setUploadingId(item.id);
+                                        fileInputRef.current?.click();
                                     }}
                                     disabled={uploadingId === item.id}
                                     size="sm"
