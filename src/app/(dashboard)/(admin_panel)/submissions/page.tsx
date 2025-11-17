@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client';
 import { toast } from "sonner";
 import { format } from 'date-fns';
-
-// Import komponen & ikon
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,7 +16,7 @@ import { CalendarIcon, SearchIcon, FilterIcon, RefreshCcwIcon, ExternalLink } fr
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 
-// Komponen Badge Status
+
 const StatusBadge = ({ status }: { status: string }) => {
     let statusClasses = "";
     switch (status?.toLowerCase()) {
@@ -29,7 +27,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     return <span className={`px-3 py-1 text-xs font-medium rounded-full ${statusClasses}`}>{status}</span>;
 };
 
-// ... (Interface Anda tetap sama)
+
 interface PengajuanBarang {
     id: number;
     created_at: string;
@@ -65,8 +63,7 @@ interface ViewingItem {
 }
 type PengajuanItem = PengajuanBarang | PengajuanUang;
 
-
-// 🔽 --- TAMBAHKAN FUNGSI HELPER INI --- 🔽
+// Fungsi untuk memformat nomor dengan pemisah ribuan
 const formatNumber = (value: string) => {
   const rawValue = value.replace(/[^0-9]/g, '');
   if (rawValue === '') return '';
@@ -95,19 +92,11 @@ export default function AdminPage() {
     const [newStatus, setNewStatus] = useState('');
     const [adminNote, setAdminNote] = useState('');
     const [newCategory, setNewCategory] = useState('');
-    
-    // 🔽 --- PERUBAHAN STATE UNTUK NOMINAL --- 🔽
-    // Menyimpan nilai mentah (e.g., "700000")
     const [approvedAmount, setApprovedAmount] = useState<string>('');
-    // Menyimpan nilai terformat (e.g., "700.000")
     const [displayApprovedAmount, setDisplayApprovedAmount] = useState<string>('');
-
-    // State untuk Dialog Detail
     const [viewingItem, setViewingItem] = useState<PengajuanItem | null>(null);
-    // State untuk Dialog Bukti
     const [buktiItem, setBuktiItem] = useState<PengajuanUang | null>(null);
 
-    // ... (fetchData tetap sama)
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         const rpcParams = {
@@ -126,7 +115,7 @@ export default function AdminPage() {
         setIsLoading(false);
     }, [supabase, searchQuery, statusFilter, kategoriFilter, startDate, endDate]);
 
-    // ... (useEffect tetap sama)
+    
     useEffect(() => {
         const checkAdminAndFetchData = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -141,7 +130,7 @@ export default function AdminPage() {
         checkAdminAndFetchData();
     }, [fetchData, router, supabase]);
 
-    // 🔽 --- FUNGSI 'handleUpdate' DIPERBARUI --- 🔽
+    
     const handleUpdate = async () => {
         if (!editingItem) return;
         
@@ -154,7 +143,6 @@ export default function AdminPage() {
         };
 
         if (activeTab === 'uang') {
-            // ❗️ Mengambil dari state 'approvedAmount' (nilai mentah)
             const finalAmount = parseFloat(approvedAmount); 
             if (isNaN(finalAmount) || finalAmount < 0) {
                  toast.error("Jumlah disetujui tidak valid.");
@@ -171,13 +159,12 @@ export default function AdminPage() {
         else {
             toast.success("Update Berhasil");
             setEditingItem(null);
-            setApprovedAmount(''); // Reset state mentah
-            setDisplayApprovedAmount(''); // Reset state tampilan
+            setApprovedAmount(''); 
+            setDisplayApprovedAmount(''); 
             fetchData();
         }
     };
 
-    // 🔽 --- FUNGSI 'openUpdateDialog' DIPERBARUI --- 🔽
     const openUpdateDialog = (item: PengajuanItem) => {
         setEditingItem(item);
         setNewStatus(item.status);
@@ -185,28 +172,26 @@ export default function AdminPage() {
         setNewCategory(item.kategori || '');
 
         if ('jumlah_uang' in item) {
-            // Default ke jumlah disetujui JIKA ADA, jika tidak, fallback ke jumlah yang diminta
             const amount = (item as PengajuanUang).jumlah_disetujui ?? (item as PengajuanUang).jumlah_uang;
-            setApprovedAmount(String(amount)); // Simpan '700000'
-            setDisplayApprovedAmount(formatNumber(String(amount))); // Tampilkan '700.000'
+            setApprovedAmount(String(amount)); 
+            setDisplayApprovedAmount(formatNumber(String(amount)));
         } else {
             setApprovedAmount('');
             setDisplayApprovedAmount('');
         }
     };
 
-    // 🔽 --- HANDLER BARU UNTUK INPUT NOMINAL --- 🔽
+    
     const handleApprovedAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       const rawValue = value.replace(/[^0-9]/g, '');
-      setApprovedAmount(rawValue); // Simpan '700000'
+      setApprovedAmount(rawValue); 
       
       const formattedValue = formatNumber(rawValue);
-      setDisplayApprovedAmount(formattedValue); // Tampilkan '700.000'
+      setDisplayApprovedAmount(formattedValue); 
     };
 
 
-    // ... (handleFilterReset dan sisa konstanta tetap sama)
     const handleFilterReset = () => {
         setSearchQuery('');
         setStatusFilter('');
@@ -270,10 +255,10 @@ export default function AdminPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Jumlah Disetujui (Rp)</label>
                                 <Input 
-                                    type="text" // ❗️ Ganti ke 'text'
-                                    inputMode="numeric" // ❗️ Tambahkan inputMode
-                                    value={displayApprovedAmount} // ❗️ Gunakan state display
-                                    onChange={handleApprovedAmountChange} // ❗️ Gunakan handler baru
+                                    type="text" 
+                                    inputMode="numeric" 
+                                    value={displayApprovedAmount} 
+                                    onChange={handleApprovedAmountChange} 
                                     placeholder="Masukkan nominal yang disetujui"
                                 />
                                 <p className="text-xs text-muted-foreground">

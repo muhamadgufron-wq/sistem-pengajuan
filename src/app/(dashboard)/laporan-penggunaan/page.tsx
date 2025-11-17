@@ -11,14 +11,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input'; // Untuk file input
 import { UploadCloud, CheckCircle, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
-// ❗️ 'error' dari 'console' tidak perlu di-import
-// import { error } from 'console'; 
 
 // Tipe data spesifik
 interface ReportItem {
     id: number;
     created_at: string;
     jumlah_uang: number;
+    jumlah_disetujui: number | null;
     keperluan: string;
     kategori: string | null;
     bukti_laporan_url: string | null;
@@ -31,15 +30,8 @@ export default function LaporPenggunaanPage() {
     const [uploadingId, setUploadingId] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // 🔽 --- LOGIKA TANGGAL INI TIDAK DIPERLUKAN LAGI --- 🔽
-    // const today = new Date();
-    // const startOfLastWeek = startOfWeek(subWeeks(today, 1), { weekStartsOn: 1 });
-    // const endOfLastWeek = endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 });
-    // const dateRangeString = `${format(startOfLastWeek, 'dd MMM yyyy', { locale: indonesiaLocale })} - ${format(endOfLastWeek, 'dd MMM yyyy', { locale: indonesiaLocale })}`;
-
     const fetchItemsToReport = async () => {
         setIsLoading(true);
-        // 🔽 --- PANGGIL RPC BARU --- 🔽
         const { data, error } = await supabase.rpc('get_my_reportable_submissions');
         
         if (error) {
@@ -52,7 +44,7 @@ export default function LaporPenggunaanPage() {
 
     useEffect(() => {
         fetchItemsToReport();
-    }, [supabase]); // Dependensi [supabase] sudah cukup
+    }, [supabase]); 
 
     const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>, item: ReportItem) => {
         const file = event.target.files?.[0];
@@ -84,7 +76,7 @@ export default function LaporPenggunaanPage() {
                 .from('pengajuan_uang')
                 .update({ 
                     bukti_laporan_url: fileUrlToSave, 
-                    laporan_submitted: true  // Pastikan ini di-set true
+                    laporan_submitted: true
                 })
                 .eq('id', item.id)
                 .eq('user_id', user.id);
@@ -107,7 +99,6 @@ export default function LaporPenggunaanPage() {
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold">Lapor Penggunaan Dana</h1>
-                    {/* 🔽 Deskripsi Diubah 🔽 */}
                     <p className="text-muted-foreground">
                         Unggah bukti penggunaan untuk semua pengajuan dana yang telah disetujui.
                     </p>
@@ -123,7 +114,6 @@ export default function LaporPenggunaanPage() {
                  <Card className="text-center p-10">
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                     <CardTitle>Semua Sudah Dilaporkan!</CardTitle>
-                    {/* 🔽 Deskripsi Diubah 🔽 */}
                     <CardDescription className="mt-2">Tidak ada pengajuan uang yang perlu dilaporkan saat ini.</CardDescription>
                 </Card>
             ) : (
@@ -137,38 +127,58 @@ export default function LaporPenggunaanPage() {
                             if (activeItem) handleFileSelect(e, activeItem);
                         }}
                         className="hidden"
-                        accept="image/png, image/jpeg, image/jpg, application/pdf" // Batasi tipe file
+                        accept="image/png, image/jpeg, image/jpg, application/pdf"
                     />
 
-                    {itemsToReport.map(item => (
-                        <Card key={item.id}>
-                            <CardHeader>
-                                <CardTitle className="text-lg">Pengajuan ID: {item.id}</CardTitle>
-                                <CardDescription>
-                                    {format(new Date(item.created_at), 'dd MMM yyyy', { locale: indonesiaLocale })} 
-                                    - Rp {item.jumlah_uang.toLocaleString('id-ID')}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p><span className="font-semibold">Keperluan:</span> {item.keperluan}</p>
-                                {item.kategori && <p><span className="font-semibold">Kategori:</span> {item.kategori}</p>}
-                            </CardContent>
-                            <CardFooter className="flex justify-end">
-                                <Button
-                                    onClick={() => {
-                                        setUploadingId(item.id);
-                                        fileInputRef.current?.click();
-                                    }}
-                                    disabled={uploadingId === item.id}
-                                    size="sm"
-                                >
-                                    {uploadingId === item.id ? 'Mengunggah...' : (
-                                        <> <UploadCloud className="mr-2 h-4 w-4" /> Unggah Bukti </>
-                                    )}
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
+                    {itemsToReport.map(item => {
+                        // 🔽 --- LOGIKA NOMINAL BARU --- 🔽
+                        // Tampilkan jumlah_disetujui JIKA ADA, jika tidak, tampilkan jumlah_uang
+                        const nominalFinal = item.jumlah_disetujui ?? item.jumlah_uang;
+                        // Tampilkan nominal asli (dicoret) HANYA JIKA berbeda
+                        const isPartial = item.jumlah_disetujui != null && item.jumlah_disetujui !== item.jumlah_uang;
+
+                        return (
+                            <Card key={item.id}>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Pengajuan ID: {item.id}</CardTitle>
+                                    <CardDescription>
+                                        {format(new Date(item.created_at), 'dd MMM yyyy', { locale: indonesiaLocale })} 
+                                        
+                                        {/* 🔽 --- TAMPILAN NOMINAL BARU --- 🔽 */}
+                                        <span className="font-semibold text-emerald-700">
+                                            {' - '}Rp {nominalFinal.toLocaleString('id-ID')}
+                                        </span>
+                                        
+                                        {isPartial && (
+                                            <span className="text-xs text-muted-foreground line-through ml-2">
+                                                (Rp {item.jumlah_uang.toLocaleString('id-ID')})
+                                            </span>
+                                        )}
+                                        {/* 🔼 --- AKHIR PERUBAHAN TAMPILAN --- 🔼 */}
+
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p><span className="font-semibold">Keperluan:</span> {item.keperluan}</p>
+                                    {item.kategori && <p><span className="font-semibold">Kategori:</span> {item.kategori}</p>}
+                                </CardContent>
+                                <CardFooter className="flex justify-end">
+                                    <Button
+                                        onClick={() => {
+                                            setUploadingId(item.id);
+                                            fileInputRef.current?.click();
+                                        }}
+                                        disabled={uploadingId === item.id}
+                                        size="sm"
+                                    >
+                                        {uploadingId === item.id ? 'Mengunggah...' : (
+                                            <> <UploadCloud className="mr-2 h-4 w-4" /> Unggah Bukti </>
+                                        )}
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )
+                    })}
                 </div>
             )}
         </div>

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/app/lib/supabase/client';
 
-// Komponen Badge Status (tidak berubah)
 const StatusBadge = ({ status }: { status: string }) => {
     const baseClasses = "px-3 py-1 text-xs font-medium rounded-full";
     let statusClasses = "";
