@@ -51,13 +51,13 @@ export default function ReportsPage() {
             const startDate = filters.dateRange.from.toISOString().split('T')[0];
             const endDate = filters.dateRange.to.toISOString().split('T')[0];
 
-            let barangQuery = supabase
+            const barangQuery = supabase
                 .from('pengajuan_barang')
                 .select('id, nama_barang, jumlah, status, created_at, user_id, kategori')
                 .gte('created_at', `${startDate} 00:00:00`)
                 .lte('created_at', `${endDate} 23:59:59`);
 
-            let uangQuery = supabase
+            const uangQuery = supabase
                 .from('pengajuan_uang')
                 .select('id, keperluan, jumlah_uang, jumlah_disetujui, status, created_at, user_id, kategori')
                 .gte('created_at', `${startDate} 00:00:00`)
