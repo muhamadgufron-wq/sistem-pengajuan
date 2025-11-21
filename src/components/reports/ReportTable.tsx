@@ -25,7 +25,20 @@ export default function ReportTable({ details }: { details: ReportDetail[] }) {
                                 <TableCell className="font-medium">{item.judul}</TableCell>
                                 <TableCell>{item.pengaju}</TableCell>
                                 <TableCell>{item.kategori || '-'}</TableCell>
-                                <TableCell>{item.tipe === 'uang' ? `Rp ${item.nominal.toLocaleString('id-ID')}` : item.nominal}</TableCell>
+                                <TableCell>
+                                    {item.tipe === 'uang' ? (
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">Rp {item.nominal.toLocaleString('id-ID')}</span>
+                                            {item.nominal_disetujui != null && item.nominal_pengajuan != null && item.nominal_disetujui !== item.nominal_pengajuan && item.status.toLowerCase() === 'disetujui' && (
+                                                <span className="text-xs text-muted-foreground line-through">
+                                                    Req: Rp {item.nominal_pengajuan.toLocaleString('id-ID')}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <span>{item.nominal} Unit</span>
+                                    )}
+                                </TableCell>
                                 <TableCell>{item.status}</TableCell>
                                 <TableCell>{new Date(item.tanggal).toLocaleDateString('id-ID')}</TableCell>
                             </TableRow>

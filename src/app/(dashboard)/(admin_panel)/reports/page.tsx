@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/app/lib/supabase/client';
 import { toast } from "sonner";
-import { addDays, startOfMonth } from 'date-fns';
+import { startOfMonth } from 'date-fns';
 
 import ReportFilter from '@/components/reports/ReportFilter';
 import ReportSummary from '@/components/reports/ReportSummary';
@@ -19,6 +19,8 @@ export interface ReportDetail {
     pengaju: string;
     kategori: string | null;
     nominal: number;
+    nominal_disetujui?: number;
+    nominal_pengajuan?: number;
     status: string;
     tanggal: string;
 }
@@ -45,18 +47,121 @@ export default function ReportsPage() {
         setIsLoading(true);
         setReportData(null);
 
-        const { data, error } = await supabase.rpc('get_filtered_report_data', {
-            start_date: filters.dateRange.from.toISOString().split('T')[0],
-            end_date: filters.dateRange.to.toISOString().split('T')[0],
-            tipe_pengajuan: filters.tipe,
-        });
+        try {
+            const startDate = filters.dateRange.from.toISOString().split('T')[0];
+            const endDate = filters.dateRange.to.toISOString().split('T')[0];
 
-        if (error) {
+            let barangQuery = supabase
+                .from('pengajuan_barang')
+                .select('id, nama_barang, jumlah, status, created_at, user_id, kategori')
+                .gte('created_at', `${startDate} 00:00:00`)
+                .lte('created_at', `${endDate} 23:59:59`);
+
+            let uangQuery = supabase
+                .from('pengajuan_uang')
+                .select('id, keperluan, jumlah_uang, jumlah_disetujui, status, created_at, user_id, kategori')
+                .gte('created_at', `${startDate} 00:00:00`)
+                .lte('created_at', `${endDate} 23:59:59`);
+
+            let barangData: any[] = [];
+            let uangData: any[] = [];
+
+            if (filters.tipe === 'semua' || filters.tipe === 'barang') {
+                const { data, error } = await barangQuery;
+                if (error) throw error;
+                barangData = data || [];
+            }
+
+            if (filters.tipe === 'semua' || filters.tipe === 'uang') {
+                const { data, error } = await uangQuery;
+                if (error) throw error;
+                uangData = data || [];
+            }
+
+            // Collect all user IDs
+            const userIds = new Set<string>();
+            barangData.forEach(item => { if(item.user_id) userIds.add(item.user_id); });
+            uangData.forEach(item => { if(item.user_id) userIds.add(item.user_id); });
+
+            // Fetch profiles manually
+            const profilesMap = new Map<string, string>();
+            if (userIds.size > 0) {
+                const { data: profiles, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('id, full_name')
+                    .in('id', Array.from(userIds));
+                
+                if (profilesError) {
+                    console.error("Error fetching profiles:", profilesError);
+                } else {
+                    profiles?.forEach(p => profilesMap.set(p.id, p.full_name));
+                }
+            }
+
+            const details: ReportDetail[] = [];
+
+            // Process Barang
+            barangData.forEach(item => {
+                details.push({
+                    id: item.id,
+                    tipe: 'barang',
+                    judul: item.nama_barang,
+                    pengaju: profilesMap.get(item.user_id) || 'Unknown',
+                    kategori: item.kategori,
+                    nominal: item.jumlah,
+                    status: item.status,
+                    tanggal: item.created_at
+                });
+            });
+
+            // Process Uang
+            uangData.forEach(item => {
+                const isApproved = item.status.toLowerCase() === 'disetujui';
+                // If approved, use jumlah_disetujui if available, otherwise jumlah_uang
+                // If not approved, use jumlah_uang (requested)
+                const nominal = isApproved ? (item.jumlah_disetujui ?? item.jumlah_uang) : item.jumlah_uang;
+                
+                details.push({
+                    id: item.id,
+                    tipe: 'uang',
+                    judul: item.keperluan,
+                    pengaju: profilesMap.get(item.user_id) || 'Unknown',
+                    kategori: item.kategori,
+                    nominal: nominal,
+                    nominal_disetujui: item.jumlah_disetujui,
+                    nominal_pengajuan: item.jumlah_uang,
+                    status: item.status,
+                    tanggal: item.created_at
+                });
+            });
+
+            // Sort by date descending
+            details.sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
+
+            // Calculate Summary
+            const total_requests = details.length;
+            const total_item_barang = details
+                .filter(d => d.tipe === 'barang' && d.status.toLowerCase() === 'disetujui')
+                .reduce((acc, curr) => acc + curr.nominal, 0);
+            
+            const total_nominal_uang = details
+                .filter(d => d.tipe === 'uang' && d.status.toLowerCase() === 'disetujui')
+                .reduce((acc, curr) => acc + curr.nominal, 0);
+
+            setReportData({
+                summary: {
+                    total_requests,
+                    total_nominal_uang,
+                    total_item_barang
+                },
+                details
+            });
+
+        } catch (error: any) {
             toast.error("Gagal Membuat Laporan", { description: error.message });
-        } else {
-            setReportData(data);
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     return (
