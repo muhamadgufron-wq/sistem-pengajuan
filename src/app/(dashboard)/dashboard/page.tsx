@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { BookCheck, UploadCloud, Calendar } from 'lucide-react';
+import { BookCheck, UploadCloud, Calendar, FileCheck } from 'lucide-react';
 
 // Komponen Card (seperti sebelumnya)
 const DashboardCard = ({ href, icon, title, description, isAdminCard = false }: {
@@ -120,6 +120,12 @@ export default function DashboardPage() {
                         title="Laporan Pengajuan Uang"
                         description="Upload bukti penggunaan uang untuk minggu lalu."
                         icon={<UploadCloud className="w-8 h-8 text-cyan-500" />}
+                    />
+                    <DashboardCard 
+                        href="/ajukan-izin"
+                        title="Ajukan Izin"
+                        description="Ajukan izin, sakit, atau cuti untuk kehadiran Anda."
+                        icon={<FileCheck className="w-8 h-8 text-indigo-500" />}
                     />
                     <DashboardCard 
                         href="/my-absensi"

@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 // ❗️ 'Settings' sudah tidak diperlukan lagi, kecuali Anda mau ganti logo
-import { Home, FileText, Users, LogOut, BarChart3, Settings, Calendar } from 'lucide-react'; 
+import { Home, FileText, Users, LogOut, BarChart3, Settings, Calendar, ClipboardList } from 'lucide-react'; 
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -110,6 +110,7 @@ export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps)
                 {(role === 'admin' || role === 'superadmin') && (
                     <>
                         <NavLink href="/submissions" icon={FileText} label="Panel Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                        <NavLink href="/pengajuan-izin" icon={ClipboardList} label="Pengajuan Izin" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                         <NavLink href="/absensi" icon={Calendar} label="Panel Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                         <NavLink href="/reports" icon={BarChart3} label="Laporan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                     </>
