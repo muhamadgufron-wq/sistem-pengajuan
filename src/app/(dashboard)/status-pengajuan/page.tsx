@@ -22,6 +22,7 @@ export default function StatusPengajuanPage() {
     
     const [pengajuanBarang, setPengajuanBarang] = useState([]);
     const [pengajuanUang, setPengajuanUang] = useState([]);
+    const [pengajuanIzin, setPengajuanIzin] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('barang');
 
@@ -34,9 +35,11 @@ export default function StatusPengajuanPage() {
             // Panggil fungsi RPC baru untuk karyawan
             const { data: barangData } = await supabase.rpc('get_my_barang_submissions');
             const { data: uangData } = await supabase.rpc('get_my_uang_submissions');
+            const { data: izinData } = await supabase.rpc('get_my_leave_requests');
 
             setPengajuanBarang(barangData || []);
             setPengajuanUang(uangData || []);
+            setPengajuanIzin(izinData || []);
             setIsLoading(false);
         };
         fetchData();
@@ -52,7 +55,7 @@ export default function StatusPengajuanPage() {
                     <Link href="/dashboard" className="text-sm font-medium text-indigo-600 hover:underline">&larr; Kembali</Link>
                 </div>
                 
-                <div className="border-b border-gray-200"><nav className="-mb-px flex space-x-8"><button onClick={() => setActiveTab('barang')} className={`${activeTab === 'barang' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Barang</button><button onClick={() => setActiveTab('uang')} className={`${activeTab === 'uang' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Uang</button></nav></div>
+                <div className="border-b border-gray-200"><nav className="-mb-px flex space-x-8"><button onClick={() => setActiveTab('barang')} className={`${activeTab === 'barang' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Barang</button><button onClick={() => setActiveTab('uang')} className={`${activeTab === 'uang' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Uang</button><button onClick={() => setActiveTab('izin')} className={`${activeTab === 'izin' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Izin</button></nav></div>
 
                 <div className="mt-6">
                     {isLoading ? <p>Memuat data...</p> : (
@@ -119,6 +122,38 @@ export default function StatusPengajuanPage() {
                                             <p className="text-xs text-gray-400 mt-3 text-right">Diajukan pada: {formatDate(item.created_at)}</p>
                                         </div>
                                     )) : <p>Belum ada riwayat pengajuan uang.</p>}
+                                </div>
+                            )}
+                            
+                            {activeTab === 'izin' && (
+                                <div className="space-y-4">
+                                    {pengajuanIzin.length > 0 ? pengajuanIzin.map((item: any) => (
+                                        <div key={item.id} className="bg-white p-5 rounded-lg shadow-sm border">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium uppercase">
+                                                            {item.jenis}
+                                                        </span>
+                                                        <span className="text-sm text-gray-500">
+                                                            {item.jumlah_hari} hari
+                                                        </span>
+                                                    </div>
+                                                    <p className="font-semibold text-gray-800">
+                                                        {formatDate(item.tanggal_mulai)} - {formatDate(item.tanggal_selesai)}
+                                                    </p>
+                                                    <p className="text-sm text-gray-600 mt-2">{item.alasan}</p>
+                                                </div>
+                                                <StatusBadge status={item.status} />
+                                            </div>
+                                            {item.catatan_admin && (
+                                                <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 text-sm">
+                                                    <strong>Catatan Admin:</strong> {item.catatan_admin}
+                                                </div>
+                                            )}
+                                            <p className="text-xs text-gray-400 mt-3 text-right">Diajukan pada: {formatDate(item.created_at)}</p>
+                                        </div>
+                                    )) : <p>Belum ada riwayat pengajuan izin.</p>}
                                 </div>
                             )}
                         </>
