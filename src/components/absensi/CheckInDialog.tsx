@@ -52,21 +52,21 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
       if (insertError) {
         // If already checked in today
         if (insertError.code === '23505') {
-          toast.error('Anda sudah melakukan check-in hari ini');
+          toast.error('Anda sudah melakukan absen masuk hari ini');
         } else {
-          toast.error('Gagal melakukan check-in: ' + insertError.message);
+          toast.error('Gagal melakukan absen masuk: ' + insertError.message);
         }
         return;
       }
 
-      toast.success('Check-in berhasil!', {
+      toast.success('Absen masuk berhasil!', {
         description: `Waktu: ${formatTime(new Date())}`,
       });
 
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error('Check-in error:', error);
+      console.error('Masuk error:', error);
       toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan');
     } finally {
       setIsSubmitting(false);
@@ -77,16 +77,16 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl">📸 Check-in</DialogTitle>
+          <DialogTitle className="text-2xl">📸 Masuk</DialogTitle>
           <DialogDescription>
-            Ambil foto selfie untuk check-in
+            Ambil foto selfie untuk masuk
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Current Time Display */}
           <div className="bg-muted p-4 rounded-lg text-center">
-            <p className="text-sm text-muted-foreground">Waktu Check-in</p>
+            <p className="text-sm text-muted-foreground">Waktu Masuk</p>
             <p className="text-2xl font-bold">{formatTime(currentTime)}</p>
           </div>
 
@@ -99,7 +99,7 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
           {isSubmitting && (
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Menyimpan check-in...
+              Menyimpan data masuk...
             </div>
           )}
         </div>

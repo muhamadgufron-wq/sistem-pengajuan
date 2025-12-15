@@ -11,7 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cart
 interface DashboardStatCards {
   barang_minggu_ini: number;
   uang_minggu_ini: number;
-  total_uang_diajukan: number;
+  jumlah_disetujui: number;
   total_karyawan: number;
 }
 
@@ -30,6 +30,17 @@ interface RecentTransaction {
   total_estimasi_biaya: number;
   status: string;
 }
+
+// Helper function untuk format currency
+const formatCurrency = (value: number | null | undefined): string => {
+  if (!value && value !== 0) return 'Rp 0';
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
 
 // Komponen Kartu Statistik (didesain ulang)
 const StatCard = ({ title, value, percentage, icon }: {
@@ -71,10 +82,9 @@ export default function AdminDashboardPage() {
       setIsLoading(true);
       
       // Kita panggil 3 fungsi RPC secara bersamaan
-      const [statsRes, chartRes, transRes] = await Promise.all([
+      const [statsRes, chartRes] = await Promise.all([
         supabase.rpc('get_dashboard_stat_cards'),
         supabase.rpc('get_dashboard_overview_chart'),
-        supabase.rpc('get_recent_transactions')
       ]);
 
       // 1. Set data Stat Cards
@@ -124,8 +134,8 @@ export default function AdminDashboardPage() {
         />
         <StatCard 
           title="Total Uang Diajukan"
-          value={`Rp${new Intl.NumberFormat('id-ID').format(statCards?.total_uang_diajukan ?? 0)}`}
-          percentage="Total pengajuan minggu ini  "
+          value={formatCurrency(statCards?.jumlah_disetujui)}
+          percentage="Total pengajuan minggu ini"
           icon={<Wallet className="h-4 w-4 text-muted-foreground" />}
         />
          <StatCard 
@@ -142,8 +152,8 @@ export default function AdminDashboardPage() {
         {/* Kolom Kiri: Overview Chart */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Overview Bulanan</CardTitle>
-            <CardDescription>Grafik pengajuan barang uang per minggu di bulan ini.</CardDescription>
+            <CardTitle>Overview Mingguan</CardTitle>
+            <CardDescription>Grafik pengajuan barang dan uang untuk 4 minggu terakhir.</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
             <ResponsiveContainer width="100%" height={350}>

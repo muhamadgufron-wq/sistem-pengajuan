@@ -130,7 +130,7 @@ export default function DashboardPage() {
                     <DashboardCard 
                         href="/my-absensi"
                         title="Absensi"
-                        description="Check-in dan check-out kehadiran harian Anda."
+                        description="Masuk dan pulang kehadiran harian Anda."
                         icon={<Calendar className="w-8 h-8 text-orange-500" />}
                     />
                 </div>

@@ -91,7 +91,7 @@ export function exportAttendanceToPDF(
 
   // Add table
   autoTable(doc, {
-    head: [['No', 'Nama', 'Tanggal', 'Check-in', 'Check-out', 'Durasi', 'Keterangan', 'Status']],
+    head: [['No', 'Nama', 'Tanggal', 'Masuk', 'Pulang', 'Durasi', 'Keterangan', 'Status']],
     body: tableData,
     startY: 32,
     styles: { fontSize: 8, cellPadding: 2 },

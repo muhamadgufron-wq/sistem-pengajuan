@@ -56,7 +56,7 @@ export default function ReportsPage() {
       const barangQuery = supabase
         .from("pengajuan_barang")
         .select(
-          "id, nama_barang, jumlah, status, created_at, user_id, kategori"
+          "id, nama_barang, jumlah, jumlah_disetujui, status, created_at, user_id, kategori"
         )
         .gte("created_at", `${startDate} 00:00:00`)
         .lte("created_at", `${endDate} 23:59:59`);
@@ -112,13 +112,22 @@ export default function ReportsPage() {
 
       // Process Barang
       barangData.forEach((item) => {
+        const isApproved = item.status.toLowerCase() === "disetujui";
+        // If approved, use jumlah_disetujui if available, otherwise jumlah
+        // If not approved, use jumlah (requested)
+        const nominal = isApproved
+          ? item.jumlah_disetujui ?? item.jumlah
+          : item.jumlah;
+
         details.push({
           id: item.id,
           tipe: "barang",
           judul: item.nama_barang,
           pengaju: profilesMap.get(item.user_id) || "Unknown",
           kategori: item.kategori,
-          nominal: item.jumlah,
+          nominal: nominal,
+          nominal_disetujui: item.jumlah_disetujui,
+          nominal_pengajuan: item.jumlah,
           status: item.status,
           tanggal: item.created_at,
         });

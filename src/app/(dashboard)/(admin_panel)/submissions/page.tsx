@@ -34,6 +34,7 @@ interface PengajuanBarang {
     created_at: string;
     nama_barang: string;
     jumlah: number;
+    jumlah_disetujui: number | null;
     alasan: string;
     status: string;
     user_id: string;
@@ -108,6 +109,7 @@ export default function AdminPage() {
     const [viewingItem, setViewingItem] = useState<PengajuanItem | null>(null);
     const [buktiItem, setBuktiItem] = useState<PengajuanUang | null>(null);
     const [imageLoadError, setImageLoadError] = useState(false);
+    const [approvedQuantity, setApprovedQuantity] = useState<string>('');
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -161,6 +163,16 @@ export default function AdminPage() {
                  return;
             }
             updateData.jumlah_disetujui = finalAmount;
+        } else if (activeTab === 'barang') {
+            // Hanya validasi dan update jika ada input
+            if (approvedQuantity && approvedQuantity.trim() !== '') {
+                const finalQuantity = parseInt(approvedQuantity);
+                if (isNaN(finalQuantity) || finalQuantity < 0) {
+                    toast.error("Jumlah disetujui tidak valid.");
+                    return;
+                }
+                updateData.jumlah_disetujui = finalQuantity;
+            }
         }
 
         const { error } = await supabase.from(tableName)
@@ -172,7 +184,8 @@ export default function AdminPage() {
             toast.success("Update Berhasil");
             setEditingItem(null);
             setApprovedAmount(''); 
-            setDisplayApprovedAmount(''); 
+            setDisplayApprovedAmount('');
+            setApprovedQuantity('');
             fetchData();
         }
     };
@@ -187,7 +200,10 @@ export default function AdminPage() {
             const amount = (item as PengajuanUang).jumlah_disetujui ?? (item as PengajuanUang).jumlah_uang;
             setApprovedAmount(String(amount)); 
             setDisplayApprovedAmount(formatNumber(String(amount)));
+            setApprovedQuantity('');
         } else {
+            const quantity = (item as PengajuanBarang).jumlah_disetujui ?? (item as PengajuanBarang).jumlah;
+            setApprovedQuantity(String(quantity));
             setApprovedAmount('');
             setDisplayApprovedAmount('');
         }
@@ -277,6 +293,24 @@ export default function AdminPage() {
                                 </p>
                             </div>
                         )}
+
+                        {/* Input Jumlah Disetujui untuk Barang */}
+                        {editingItem && 'nama_barang' in editingItem && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Jumlah Disetujui (Unit)</label>
+                                <Input 
+                                    type="number" 
+                                    min="0"
+                                    value={approvedQuantity} 
+                                    onChange={(e) => setApprovedQuantity(e.target.value)} 
+                                    placeholder="Masukkan jumlah yang disetujui"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Diminta: {(editingItem as PengajuanBarang).jumlah} unit
+                                </p>
+                            </div>
+                        )}
+
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Catatan Admin</label>
                             <Textarea placeholder="Tulis catatan..." value={adminNote} onChange={(e) => setAdminNote(e.target.value)} />
@@ -308,7 +342,19 @@ export default function AdminPage() {
                         {activeTab === 'barang' && viewingItem && 'nama_barang' in viewingItem && (
                             <>
                                 <div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Nama Barang</span><span className="col-span-2 font-medium">{viewingItem.nama_barang}</span></div>
-                                <div className="grid grid-cols-3 items-center gap-4 border-b pb-2"><span className="text-muted-foreground">Jumlah</span><span className="col-span-2 font-medium">{viewingItem.jumlah} unit</span></div>
+                                <div className="grid grid-cols-3 items-center gap-4 border-b pb-2">
+                                    <span className="text-muted-foreground">Jumlah</span>
+                                    <span className="col-span-2">
+                                        {viewingItem.jumlah_disetujui != null && viewingItem.jumlah_disetujui !== viewingItem.jumlah ? (
+                                            <div>
+                                                <div className="font-medium text-green-600">{viewingItem.jumlah_disetujui} unit (disetujui)</div>
+                                                <div className="text-sm text-muted-foreground line-through">{viewingItem.jumlah} unit (diminta)</div>
+                                            </div>
+                                        ) : (
+                                            <span className="font-medium">{viewingItem.jumlah_disetujui ?? viewingItem.jumlah} unit</span>
+                                        )}
+                                    </span>
+                                </div>
                                 <div className="grid grid-cols-3 items-start gap-4 border-b pb-2"><span className="text-muted-foreground">Alasan</span><span className="col-span-2">{viewingItem.alasan}</span></div>
                             </>
                         )}
@@ -561,9 +607,38 @@ export default function AdminPage() {
                                         {/* Kolom Detail Pengajuan (LOGIKA BARU) */}
                                         <TableCell className="px-6 py-4">
                                             {activeTab === 'barang' ? (
-                                                <div className="font-medium">
-                                                    {(item as PengajuanBarang).nama_barang} ({(item as PengajuanBarang).jumlah} unit)
-                                                </div>
+                                                (() => {
+                                                    const barangItem = item as PengajuanBarang;
+                                                    const diminta = barangItem.jumlah;
+                                                    const disetujui = barangItem.jumlah_disetujui;
+                                                    const isPartial = disetujui != null && disetujui !== diminta;
+                                                    const isApprovedOrRejected = item.status !== 'pending';
+
+                                                    return (
+                                                        <div>
+                                                            {/* Tampilkan jumlah yang disetujui/final jika ada & tidak sama */}
+                                                            {isPartial && isApprovedOrRejected ? (
+                                                                <>
+                                                                    <div className="font-medium text-emerald-600">
+                                                                        {Number(disetujui).toLocaleString('id-ID')} unit
+                                                                    </div>
+                                                                    <div className="text-xs text-muted-foreground line-through">
+                                                                        {Number(diminta).toLocaleString('id-ID')} unit
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                // Tampilan Normal (Jumlah yang diminta atau disetujui jika sama)
+                                                                <div className="font-medium">
+                                                                    {Number(disetujui ?? diminta).toLocaleString('id-ID')} unit
+                                                                </div>
+                                                            )}
+                                                            
+                                                            <div className="text-xs text-muted-foreground truncate w-40" title={barangItem.nama_barang}>
+                                                                {barangItem.nama_barang}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()
                                             ) : (
                                                 (() => {
                                                     const uangItem = item as PengajuanUang;

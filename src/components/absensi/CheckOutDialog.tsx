@@ -72,11 +72,11 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime }: C
         .eq('tanggal', new Date().toISOString().split('T')[0]);
 
       if (updateError) {
-        toast.error('Gagal melakukan check-out: ' + updateError.message);
+        toast.error('Gagal melakukan absen pulang: ' + updateError.message);
         return;
       }
 
-      toast.success('Check-out berhasil!', {
+      toast.success('Absen pulang berhasil!', {
         description: `Durasi kerja: ${workDuration}`,
       });
 
@@ -87,7 +87,7 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime }: C
       setStep('keterangan');
       setKeterangan('');
     } catch (error) {
-      console.error('Check-out error:', error);
+      console.error('Pulang error:', error);
       toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan');
     } finally {
       setIsSubmitting(false);
@@ -108,9 +108,9 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime }: C
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl">📸 Check-out</DialogTitle>
+          <DialogTitle className="text-2xl">📸 Pulang</DialogTitle>
           <DialogDescription>
-            {step === 'keterangan' ? 'Isi keterangan kegiatan hari ini' : 'Ambil foto selfie untuk check-out'}
+            {step === 'keterangan' ? 'Isi keterangan kegiatan hari ini' : 'Ambil foto selfie untuk pulang'}
           </DialogDescription>
         </DialogHeader>
 
@@ -118,11 +118,11 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime }: C
           {/* Work Duration Display */}
           <div className="bg-muted p-4 rounded-lg space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Check-in</span>
+              <span className="text-muted-foreground">Masuk</span>
               <span className="font-medium">{formatTime(checkInDate)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Check-out</span>
+              <span className="text-muted-foreground">Pulang</span>
               <span className="font-medium">{formatTime(currentTime)}</span>
             </div>
             <div className="border-t pt-2 mt-2">
@@ -179,7 +179,7 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime }: C
               {isSubmitting && (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Menyimpan check-out...
+                  Menyimpan data pulang...
                 </div>
               )}
             </>

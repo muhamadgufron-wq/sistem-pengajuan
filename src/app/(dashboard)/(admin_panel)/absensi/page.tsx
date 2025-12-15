@@ -80,6 +80,7 @@ export default function AdminAbsensiPage() {
   const [viewingDetail, setViewingDetail] = useState<AttendanceRecord | null>(null);
   const [totalEmployees, setTotalEmployees] = useState(0);
   const [todayAttendanceData, setTodayAttendanceData] = useState<AttendanceRecord[]>([]);
+  const [viewingStatusList, setViewingStatusList] = useState<{ status: string; employees: { name: string; time?: string }[] } | null>(null);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -299,6 +300,37 @@ export default function AdminAbsensiPage() {
     return `${hours}j ${minutes}m`;
   };
 
+  const handleStatusCardClick = async (status: string) => {
+    // Get employees with specific status for today
+    const employees = todayAttendanceData
+      .filter(record => record.status === status)
+      .map(record => ({
+        name: record.full_name,
+        time: record.check_in_time ? formatTime(new Date(record.check_in_time)) : undefined
+      }));
+
+    // For "alpha" (belum hadir), we need to get all employees who haven't checked in
+    if (status === 'alpha') {
+      try {
+        const { data: allProfiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .eq('role', 'karyawan');
+
+        const attendedUserIds = new Set(todayAttendanceData.map(r => r.user_id));
+        const absentEmployees = (allProfiles || [])
+          .filter((p: any) => !attendedUserIds.has(p.id))
+          .map((p: any) => ({ name: p.full_name }));
+
+        setViewingStatusList({ status, employees: absentEmployees });
+      } catch (error) {
+        console.error('Error fetching absent employees:', error);
+      }
+    } else {
+      setViewingStatusList({ status, employees });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -326,7 +358,7 @@ export default function AdminAbsensiPage() {
       {/* Stats Cards */}
       {dailyStats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleStatusCardClick('hadir')}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -338,7 +370,7 @@ export default function AdminAbsensiPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleStatusCardClick('izin')}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -350,7 +382,7 @@ export default function AdminAbsensiPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleStatusCardClick('sakit')}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -362,7 +394,7 @@ export default function AdminAbsensiPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleStatusCardClick('alpha')}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -484,8 +516,8 @@ export default function AdminAbsensiPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nama</TableHead>
-                <TableHead>Check-in</TableHead>
-                <TableHead>Check-out</TableHead>
+                <TableHead>Masuk</TableHead>
+                <TableHead>Pulang</TableHead>
                 <TableHead>Durasi</TableHead>
                 <TableHead>Keterangan</TableHead>
                 <TableHead>Status</TableHead>
@@ -514,7 +546,7 @@ export default function AdminAbsensiPage() {
                               className="h-auto p-0 text-xs"
                               onClick={() => handleViewPhoto(
                                 `/api/foto-absensi/${record.check_in_photo_url}`,
-                                'Check-in',
+                                'Masuk',
                                 record.full_name,
                                 record.check_in_time,
                                 record.tanggal
@@ -539,7 +571,7 @@ export default function AdminAbsensiPage() {
                               className="h-auto p-0 text-xs"
                               onClick={() => handleViewPhoto(
                                 `/api/foto-absensi/${record.check_out_photo_url}`,
-                                'Check-out',
+                                'Pulang',
                                 record.full_name,
                                 record.check_out_time,
                                 record.tanggal
@@ -653,7 +685,7 @@ export default function AdminAbsensiPage() {
               <div className="border rounded-lg p-4 space-y-3">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
                   <LogIn className="h-4 w-4" />
-                  Check-in
+                  Masuk
                 </h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
@@ -669,14 +701,14 @@ export default function AdminAbsensiPage() {
                 </div>
                 {viewingDetail.check_in_photo_url && (
                   <div>
-                    <p className="text-muted-foreground text-xs mb-2">Foto Check-in</p>
+                    <p className="text-muted-foreground text-xs mb-2">Foto Masuk</p>
                     <img
                       src={`/api/foto-absensi/${viewingDetail.check_in_photo_url}`}
-                      alt="Check-in"
+                      alt="Masuk"
                       className="w-32 h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
                       onClick={() => handleViewPhoto(
                         `/api/foto-absensi/${viewingDetail.check_in_photo_url}`,
-                        'Check-in',
+                        'Masuk',
                         viewingDetail.full_name,
                         viewingDetail.check_in_time,
                         viewingDetail.tanggal
@@ -690,7 +722,7 @@ export default function AdminAbsensiPage() {
               <div className="border rounded-lg p-4 space-y-3">
                 <h4 className="font-semibold text-sm flex items-center gap-2">
                   <LogOut className="h-4 w-4" />
-                  Check-out
+                  Pulang
                 </h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
@@ -708,14 +740,14 @@ export default function AdminAbsensiPage() {
                 </div>
                 {viewingDetail.check_out_photo_url && (
                   <div>
-                    <p className="text-muted-foreground text-xs mb-2">Foto Check-out</p>
+                    <p className="text-muted-foreground text-xs mb-2">Foto Pulang</p>
                     <img
                       src={`/api/foto-absensi/${viewingDetail.check_out_photo_url}`}
-                      alt="Check-out"
+                      alt="Pulang"
                       className="w-32 h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
                       onClick={() => handleViewPhoto(
                         `/api/foto-absensi/${viewingDetail.check_out_photo_url}`,
-                        'Check-out',
+                        'Pulang',
                         viewingDetail.full_name,
                         viewingDetail.check_out_time,
                         viewingDetail.tanggal
@@ -737,6 +769,64 @@ export default function AdminAbsensiPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setViewingDetail(null)}>
+              Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Employee List by Status Dialog */}
+      <Dialog open={!!viewingStatusList} onOpenChange={(open) => !open && setViewingStatusList(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {viewingStatusList?.status === 'hadir' && <CheckCircle className="h-5 w-5 text-green-600" />}
+              {viewingStatusList?.status === 'izin' && <Clock className="h-5 w-5 text-blue-600" />}
+              {viewingStatusList?.status === 'sakit' && <AlertCircle className="h-5 w-5 text-yellow-600" />}
+              {viewingStatusList?.status === 'alpha' && <XCircle className="h-5 w-5 text-red-600" />}
+              Daftar Karyawan - {
+                viewingStatusList?.status === 'hadir' ? 'Hadir' :
+                viewingStatusList?.status === 'izin' ? 'Izin' :
+                viewingStatusList?.status === 'sakit' ? 'Sakit' :
+                'Belum Hadir'
+              }
+            </DialogTitle>
+            <DialogDescription>
+              Total: {viewingStatusList?.employees.length || 0} karyawan
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="max-h-[400px] overflow-y-auto">
+            {viewingStatusList && viewingStatusList.employees.length > 0 ? (
+              <div className="space-y-2">
+                {viewingStatusList.employees.map((employee, index) => (
+                  <div 
+                    key={index}
+                    className={`p-3 rounded-lg border ${
+                      viewingStatusList.status === 'hadir' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' :
+                      viewingStatusList.status === 'izin' ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' :
+                      viewingStatusList.status === 'sakit' ? 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800' :
+                      'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">{employee.name}</span>
+                      {employee.time && (
+                        <span className="text-xs text-muted-foreground">{employee.time}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                Tidak ada karyawan dengan status ini
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingStatusList(null)}>
               Tutup
             </Button>
           </DialogFooter>

@@ -38,6 +38,15 @@ interface AttendanceHistory {
   check_in_keterangan: string | null;
 }
 
+interface ApprovedLeave {
+  id: number;
+  jenis: string; // 'izin', 'sakit', 'cuti'
+  tanggal_mulai: string;
+  tanggal_selesai: string;
+  alasan: string;
+  jumlah_hari: number;
+}
+
 export default function AbsensiPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -45,6 +54,7 @@ export default function AbsensiPage() {
   const [todayAttendance, setTodayAttendance] = useState<TodayAttendance | null>(null);
   const [stats, setStats] = useState<AttendanceStats | null>(null);
   const [history, setHistory] = useState<AttendanceHistory[]>([]);
+  const [approvedLeave, setApprovedLeave] = useState<ApprovedLeave | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showCheckInDialog, setShowCheckInDialog] = useState(false);
   const [showCheckOutDialog, setShowCheckOutDialog] = useState(false);
@@ -116,6 +126,21 @@ export default function AbsensiPage() {
         console.error('Error fetching history:', historyError);
       } else {
         setHistory(historyData || []);
+      }
+
+      // Check if user has approved leave for today
+      const { data: leaveData, error: leaveError } = await supabase
+        .rpc('check_approved_leave_for_date', {
+          p_user_id: user.id,
+          p_date: new Date().toISOString().split('T')[0],
+        });
+
+      if (leaveError) {
+        console.error('Error checking approved leave:', leaveError);
+      } else if (leaveData && leaveData.length > 0) {
+        setApprovedLeave(leaveData[0]);
+      } else {
+        setApprovedLeave(null);
       }
     } catch (error) {
       console.error('Error in fetchData:', error);
@@ -199,7 +224,7 @@ export default function AbsensiPage() {
             <div className="border rounded-lg p-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                 <LogIn className="h-4 w-4" />
-                Check-in
+                Masuk
               </div>
               {hasCheckedIn ? (
                 <>
@@ -211,35 +236,70 @@ export default function AbsensiPage() {
                   </p>
                 </>
               ) : (
-                <p className="text-lg text-muted-foreground">Belum check-in</p>
+                <p className="text-lg text-muted-foreground">Belum masuk</p>
               )}
             </div>
 
             <div className="border rounded-lg p-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                 <LogOut className="h-4 w-4" />
-                Check-out
+                Pulang
               </div>
               {hasCheckedOut ? (
                 <p className="text-2xl font-bold text-blue-600">
                   {formatTime(new Date(todayAttendance.check_out_time!))}
                 </p>
               ) : (
-                <p className="text-lg text-muted-foreground">Belum check-out</p>
+                <p className="text-lg text-muted-foreground">Belum pulang</p>
               )}
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            {!hasCheckedIn ? (
+            {approvedLeave ? (
+              // Show leave information if user has approved leave
+              <div className="flex-1 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    {approvedLeave.jenis === 'izin' && <span className="text-2xl">📋</span>}
+                    {approvedLeave.jenis === 'sakit' && <span className="text-2xl">🤒</span>}
+                    {approvedLeave.jenis === 'cuti' && <span className="text-2xl">🏖️</span>}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                        approvedLeave.jenis === 'izin' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                        approvedLeave.jenis === 'sakit' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                        'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                      }`}>
+                        {approvedLeave.jenis.charAt(0).toUpperCase() + approvedLeave.jenis.slice(1)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(approvedLeave.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                        {approvedLeave.jumlah_hari > 1 && 
+                          ` - ${new Date(approvedLeave.tanggal_selesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`
+                        }
+                        {' '}({approvedLeave.jumlah_hari} hari)
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
+                      Anda sedang {approvedLeave.jenis}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {approvedLeave.alasan}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : !hasCheckedIn ? (
               <Button
                 onClick={() => setShowCheckInDialog(true)}
                 className="flex-1"
                 size="lg"
               >
                 <LogIn className="mr-2 h-5 w-5" />
-                Check-in Sekarang
+                Masuk Sekarang
               </Button>
             ) : !hasCheckedOut ? (
               <Button
@@ -249,7 +309,7 @@ export default function AbsensiPage() {
                 variant="outline"
               >
                 <LogOut className="mr-2 h-5 w-5" />
-                Check-out Sekarang
+                Pulang Sekarang
               </Button>
             ) : (
               <div className="flex-1 text-center py-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
