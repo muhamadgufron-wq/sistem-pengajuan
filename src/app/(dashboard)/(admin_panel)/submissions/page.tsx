@@ -16,6 +16,7 @@ import { CalendarIcon, SearchIcon, FilterIcon, RefreshCcwIcon, ExternalLink } fr
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { DateRange } from "react-day-picker";
+import ProofGallery from '@/components/admin/ProofGallery';
 
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -403,89 +404,20 @@ export default function AdminPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* ... (Dialog Bukti Laporan Anda tetap sama) ... */}
+            {/* Dialog Bukti Laporan - Simplified */}
             <Dialog open={!!buktiItem} onOpenChange={(open) => !open && setBuktiItem(null)}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl">Bukti Laporan</DialogTitle>
+                        <DialogTitle>Bukti Laporan</DialogTitle>
                         <DialogDescription>
-                            Bukti laporan untuk pengajuan #{buktiItem?.id} oleh {buktiItem?.full_name}
+                            Pengajuan #{buktiItem?.id}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4 flex justify-center items-center min-h-[200px]">
-                        {buktiItem?.bukti_laporan_url ? (
-                            (() => {
-                                const buktiPath = buktiItem.bukti_laporan_url!;
-                                const apiBuktiUrl = `/api/bukti/${buktiPath}`;
-                                // Support lebih banyak format gambar
-                                const isImage = true; // Selalu coba tampilkan sebagai gambar
-                                
-                                if (isImage) {
-                                    return (
-                                        <div className="w-full space-y-3">
-                                            <a 
-                                                href={apiBuktiUrl} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="block cursor-pointer hover:opacity-90 transition-opacity"
-                                                title="Klik untuk membuka di tab baru"
-                                            >
-                                                <img
-                                                    src={apiBuktiUrl}
-                                                    alt={`Bukti ${buktiItem.id}`}
-                                                    className="w-full h-auto object-contain max-h-[60vh] rounded-lg border shadow-sm"
-                                                    onError={(e) => {
-                                                        const target = e.target as HTMLImageElement;
-                                                        target.style.display = 'none';
-                                                        const parent = target.parentElement;
-                                                        if (parent) {
-                                                            parent.innerHTML = `
-                                                                <div class="text-center py-10 px-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-md border border-yellow-200 dark:border-yellow-800">
-                                                                    <p class="text-yellow-800 dark:text-yellow-200 font-medium mb-2">⚠️ File Tidak Ditemukan</p>
-                                                                    <p class="text-sm text-yellow-700 dark:text-yellow-300 mb-3">File bukti laporan tidak tersedia di storage.</p>
-                                                                    <p class="text-xs text-yellow-600 dark:text-yellow-400 font-mono">${buktiPath}</p>
-                                                                </div>
-                                                            `;
-                                                        }
-                                                    }}
-                                                />
-                                            </a>
-                                            <p className="text-xs text-center text-muted-foreground">
-                                                💡 Klik gambar untuk membuka di tab baru
-                                            </p>
-                                        </div>
-                                    );
-                                } else {
-                                    // Untuk file non-gambar (PDF, dll)
-                                    const isPDF = /\.pdf$/i.test(buktiPath);
-                                    return (
-                                        <div className="text-center space-y-3">
-                                            <div className="text-6xl mb-4">{isPDF ? '📄' : '📎'}</div>
-                                            <p className="text-sm text-muted-foreground mb-4">
-                                                {isPDF ? 'File PDF' : 'File Lampiran'}
-                                            </p>
-                                            <Button asChild size="lg">
-                                                <a href={apiBuktiUrl} target="_blank" rel="noopener noreferrer">
-                                                    <ExternalLink className="mr-2 h-4 w-4" />
-                                                    {isPDF ? 'Buka PDF' : 'Lihat File'}
-                                                </a>
-                                            </Button>
-                                            <p className="text-xs text-muted-foreground mt-2">
-                                                {buktiPath.split('/').pop()}
-                                            </p>
-                                        </div>
-                                    );
-                                }
-                            })()
-                        ) : (
-                            <p className="text-center text-muted-foreground py-10 font-medium">
-                                Belum melakukan laporan
-                            </p>
+                    <div className="py-2">
+                        {buktiItem && (
+                            <ProofGallery pengajuanId={buktiItem.id} />
                         )}
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setBuktiItem(null)}>Tutup</Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
