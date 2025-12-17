@@ -97,6 +97,21 @@ export default function DashboardPage() {
 
             <main className="max-w-7xl mx-auto px-6 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {/* Absensi - Prioritas Utama */}
+                    <DashboardCard 
+                        href="/my-absensi"
+                        title="Absensi"
+                        description="Masuk dan pulang kehadiran harian Anda."
+                        icon={<Calendar className="w-8 h-8 text-orange-500" />}
+                    />
+                    <DashboardCard 
+                        href="/ajukan-izin"
+                        title="Ajukan Izin"
+                        description="Ajukan izin, sakit, atau cuti untuk kehadiran Anda."
+                        icon={<FileCheck className="w-8 h-8 text-indigo-500" />}
+                    />
+                    
+                    {/* Pengajuan */}
                     <DashboardCard 
                         href="/ajukan-barang"
                         title="Ajukan Barang"
@@ -109,6 +124,8 @@ export default function DashboardPage() {
                         description="Buat permintaan untuk pencairan dana keperluan operasional."
                         icon={<svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
                     />
+                    
+                    {/* Riwayat & Laporan */}
                     <DashboardCard 
                         href="/status-pengajuan"
                         title="Riwayat & Status"
@@ -120,18 +137,6 @@ export default function DashboardPage() {
                         title="Laporan Pengajuan Uang"
                         description="Upload bukti penggunaan uang untuk minggu lalu."
                         icon={<UploadCloud className="w-8 h-8 text-cyan-500" />}
-                    />
-                    <DashboardCard 
-                        href="/ajukan-izin"
-                        title="Ajukan Izin"
-                        description="Ajukan izin, sakit, atau cuti untuk kehadiran Anda."
-                        icon={<FileCheck className="w-8 h-8 text-indigo-500" />}
-                    />
-                    <DashboardCard 
-                        href="/my-absensi"
-                        title="Absensi"
-                        description="Masuk dan pulang kehadiran harian Anda."
-                        icon={<Calendar className="w-8 h-8 text-orange-500" />}
                     />
                 </div>
             </main>

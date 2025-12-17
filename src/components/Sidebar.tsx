@@ -75,13 +75,6 @@ export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps)
 
     return (
         <aside className={`h-screen bg-card text-card-foreground flex flex-col border-r shadow-md transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
-            
-            {/* Header Sidebar */}
-            {/* 🔽 PERUBAHAN DI SINI 🔽 */}
-            {/* Saya menggabungkan header dan logo.
-                Saat 'isSidebarOpen' = true, header lengkap (p-6) akan tampil.
-                Saat 'isSidebarOpen' = false, hanya logo (h-16) yang akan tampil.
-            */}
             <div className={`border-b transition-all duration-300 ${isSidebarOpen ? 'p-6 h-auto opacity-100' : 'h-16 p-0'}`}>
                 {isSidebarOpen ? (
                     // Tampilan Saat Terbuka
@@ -100,13 +93,19 @@ export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps)
                     </div>
                 )}
             </div>
-            {/* 🔼 BLOK LOGO/HEADER SEBELUMNYA DIHAPUS & DIGABUNG 🔼 */}
-
-
             {/* Menu Navigasi */}
             <nav className="flex-1 px-3 py-6 space-y-3 overflow-y-auto overflow-x-hidden">
                 <NavLink href="/admin" icon={Home} label="Dashboard" isSidebarOpen={isSidebarOpen} pathname={pathname} />
 
+                {/* Menu untuk Karyawan */}
+                {role === 'karyawan' && (
+                    <>
+                        <NavLink href="/my-absensi" icon={Calendar} label="Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                        <NavLink href="/status-pengajuan" icon={FileText} label="Status Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                    </>
+                )}
+
+                {/* Menu untuk Admin & Superadmin */}
                 {(role === 'admin' || role === 'superadmin') && (
                     <>
                         <NavLink href="/submissions" icon={FileText} label="Panel Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
@@ -115,6 +114,8 @@ export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps)
                         <NavLink href="/reports" icon={BarChart3} label="Laporan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                     </>
                 )}
+
+                {/* Menu khusus Superadmin */}
                 {role === 'superadmin' && (
                     <NavLink href="/manage-users" icon={Users} label="Manajemen User" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                 )}
