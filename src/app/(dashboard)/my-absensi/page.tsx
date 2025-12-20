@@ -295,21 +295,20 @@ export default function AbsensiPage() {
             ) : !hasCheckedIn ? (
               <Button
                 onClick={() => setShowCheckInDialog(true)}
-                className="flex-1"
+                className="flex-1 bg-green-500 hover:bg-green-600"
                 size="lg"
               >
                 <LogIn className="mr-2 h-5 w-5" />
-                Masuk Sekarang
+                Masuk
               </Button>
             ) : !hasCheckedOut ? (
               <Button
                 onClick={() => setShowCheckOutDialog(true)}
-                className="flex-1"
+                className="flex-1 bg-red-500 hover:bg-red-600"
                 size="lg"
-                variant="outline"
               >
                 <LogOut className="mr-2 h-5 w-5" />
-                Pulang Sekarang
+                Pulang
               </Button>
             ) : (
               <div className="flex-1 text-center py-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">

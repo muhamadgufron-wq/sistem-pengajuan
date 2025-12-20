@@ -14,12 +14,22 @@ export async function startCamera(videoElement: HTMLVideoElement): Promise<Media
     });
 
     videoElement.srcObject = stream;
-    await videoElement.play();
+    
+    // Handle play() errors gracefully
+    try {
+      await videoElement.play();
+    } catch (playError) {
+      // Ignore AbortError - it's harmless and occurs during re-renders
+      if (playError instanceof Error && playError.name !== 'AbortError') {
+        throw playError;
+      }
+    }
 
     return stream;
   } catch (error) {
     console.error('Error accessing camera:', error);
-    throw new Error('Tidak dapat mengakses kamera. Pastikan Anda memberikan izin akses kamera.');
+    // Re-throw the original error for better error handling
+    throw error;
   }
 }
 

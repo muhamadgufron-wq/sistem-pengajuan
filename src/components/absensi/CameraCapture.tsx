@@ -50,7 +50,8 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
       const mediaStream = await startCamera(videoRef.current);
       setStream(mediaStream);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Gagal mengakses kamera');
+      console.error('Camera error:', error);
+      // Don't show toast - camera failure is already indicated by disabled button
     } finally {
       setIsLoading(false);
     }
