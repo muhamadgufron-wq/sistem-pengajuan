@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Home, FileText, Users, LogOut, BarChart3, Settings, Calendar, ClipboardList } from 'lucide-react'; 
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState, useEffect } from 'react';
 
 interface SidebarProps {
     fullName: string;
@@ -18,12 +19,13 @@ interface SidebarProps {
 /**
  * Komponen NavLink
  */
-const NavLink = ({ href, icon: Icon, label, isSidebarOpen, pathname }: { 
+const NavLink = ({ href, icon: Icon, label, isSidebarOpen, pathname, badge }: { 
     href: string; 
     icon: React.ElementType; 
     label: string; 
     isSidebarOpen: boolean;
-    pathname: string; 
+    pathname: string;
+    badge?: number; // Optional badge count
 }) => {
     
     const isActive = pathname.startsWith(href);
@@ -45,14 +47,35 @@ const NavLink = ({ href, icon: Icon, label, isSidebarOpen, pathname }: {
                                   : 'bg-transparent text-muted-foreground hover:text-emerald-500 hover:bg-emerald-50'}
                             `}
                         >
-                            <Icon className={`h-5 w-5 ${isSidebarOpen ? 'mr-3' : 'mr-0'}`} />
-                            {isSidebarOpen && <span>{label}</span>}
+                            <div className="relative">
+                                <Icon className={`h-5 w-5 ${isSidebarOpen ? 'mr-3' : 'mr-0'}`} />
+                                {/* Badge for collapsed sidebar */}
+                                {!isSidebarOpen && badge !== undefined && badge > 0 && (
+                                    <span className="absolute -top-2 -right-2 h-4 w-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                        {badge > 9 ? '9+' : badge}
+                                    </span>
+                                )}
+                            </div>
+                            {isSidebarOpen && (
+                                <div className="flex items-center justify-between flex-1">
+                                    <span>{label}</span>
+                                    {/* Badge for expanded sidebar */}
+                                    {badge !== undefined && badge > 0 && (
+                                        <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                                            {badge > 99 ? '99+' : badge}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                         </Button>
                     </Link>
                 </TooltipTrigger>
                 {!isSidebarOpen && (
                     <TooltipContent side="right">
                         <p>{label}</p>
+                        {badge !== undefined && badge > 0 && (
+                            <p className="text-xs text-red-400 font-semibold">{badge} pending</p>
+                        )}
                     </TooltipContent>
                 )}
             </Tooltip>
@@ -64,7 +87,73 @@ const NavLink = ({ href, icon: Icon, label, isSidebarOpen, pathname }: {
 export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps) {
     const router = useRouter();
     const supabase = createClient();
-    const pathname = usePathname(); 
+    const pathname = usePathname();
+    
+    // State for pending counts
+    const [pendingSubmissions, setPendingSubmissions] = useState(0);
+    const [pendingLeaveRequests, setPendingLeaveRequests] = useState(0);
+
+    // Fetch pending counts
+    useEffect(() => {
+        if (role === 'admin' || role === 'superadmin') {
+            fetchPendingCounts();
+            
+            // Refresh every 30 seconds
+            const interval = setInterval(fetchPendingCounts, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [role]);
+
+    const fetchPendingCounts = async () => {
+        try {
+            // Get start of current week (Monday)
+            const now = new Date();
+            const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - daysToMonday);
+            startOfWeek.setHours(0, 0, 0, 0);
+            
+            const startOfWeekStr = startOfWeek.toISOString();
+
+            // Count pending money requests (this week only)
+            const { data: moneyData, count: moneyCount } = await supabase
+                .from('pengajuan_uang')
+                .select('id, status, created_at', { count: 'exact' })
+                .eq('status', 'pending')
+                .gte('created_at', startOfWeekStr);
+
+            // Count pending item requests (this week only)
+            const { data: itemData, count: itemCount } = await supabase
+                .from('pengajuan_barang')
+                .select('id, status, created_at', { count: 'exact' })
+                .eq('status', 'pending')
+                .gte('created_at', startOfWeekStr);
+
+            // Count pending leave requests (this week only)
+            const { data: leaveData, count: leaveCount } = await supabase
+                .from('pengajuan_izin')
+                .select('id, status, created_at', { count: 'exact' })
+                .eq('status', 'pending')
+                .gte('created_at', startOfWeekStr);
+
+            const totalSubmissions = (moneyCount || 0) + (itemCount || 0);
+            const totalLeave = leaveCount || 0;
+
+            console.log('📊 Badge (Minggu Ini):', {
+                startOfWeek: startOfWeek.toLocaleDateString('id-ID'),
+                money: moneyCount,
+                items: itemCount,
+                leave: leaveCount,
+                total: totalSubmissions
+            });
+
+            setPendingSubmissions(totalSubmissions);
+            setPendingLeaveRequests(totalLeave);
+        } catch (error) {
+            console.error('Error fetching pending counts:', error);
+        }
+    };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -108,8 +197,8 @@ export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps)
                 {/* Menu untuk Admin & Superadmin */}
                 {(role === 'admin' || role === 'superadmin') && (
                     <>
-                        <NavLink href="/submissions" icon={FileText} label="Panel Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                        <NavLink href="/pengajuan-izin" icon={ClipboardList} label="Pengajuan Izin" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                        <NavLink href="/submissions" icon={FileText} label="Panel Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingSubmissions} />
+                        <NavLink href="/pengajuan-izin" icon={ClipboardList} label="Pengajuan Izin" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingLeaveRequests} />
                         <NavLink href="/absensi" icon={Calendar} label="Panel Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                         <NavLink href="/reports" icon={BarChart3} label="Laporan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                     </>

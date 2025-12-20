@@ -74,7 +74,6 @@ export default function AdminDashboardPage() {
   const supabase = createClient();
   const [statCards, setStatCards] = useState<DashboardStatCards | null>(null);
   const [chartData, setChartData] = useState<WeeklyChartData[]>([]);
-  const [transactions, setTransactions] = useState<RecentTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -91,6 +90,7 @@ export default function AdminDashboardPage() {
       if (statsRes.error) {
         toast.error("Gagal mengambil data kartu", { description: statsRes.error.message });
       } else {
+        console.log('📊 Dashboard Stats:', statsRes.data[0]);
         setStatCards(statsRes.data[0]); // Ambil baris pertama
       }
       
