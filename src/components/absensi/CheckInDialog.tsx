@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { CameraCapture } from './CameraCapture';
 import { createClient } from '@/app/lib/supabase/client';
 import { uploadAttendancePhoto, formatTime } from '@/lib/utils/camera';
+import { getCheckInStatus, isWednesday } from '@/lib/utils/attendance-utils';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -38,6 +39,10 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
         'check-in'
       );
 
+      // Determine status based on day
+      const today = new Date();
+      const status = getCheckInStatus(today);
+
       // Insert absensi record (without keterangan)
       const { error: insertError } = await supabase
         .from('absensi')
@@ -46,7 +51,7 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
           tanggal: new Date().toISOString().split('T')[0],
           check_in_time: new Date().toISOString(),
           check_in_photo_url: photoPath,
-          status: 'hadir',
+          status: status,
         });
 
       if (insertError) {
@@ -59,8 +64,16 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
         return;
       }
 
-      toast.success('Absen masuk berhasil!', {
-        description: `Waktu: ${formatTime(new Date())}`,
+      const successMessage = status === 'lembur' 
+        ? 'Absen lembur berhasil!' 
+        : 'Absen masuk berhasil!';
+      
+      const description = status === 'lembur'
+        ? `Hari libur - Dihitung sebagai lembur | Waktu: ${formatTime(new Date())}`
+        : `Waktu: ${formatTime(new Date())}`;
+
+      toast.success(successMessage, {
+        description: description,
       });
 
       onSuccess();
@@ -84,6 +97,23 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Wednesday Holiday Banner */}
+          {isWednesday(currentTime) && (
+            <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="flex items-start gap-2">
+                <span className="text-lg">⚠️</span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">
+                    Hari Libur (Rabu)
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Check-in hari ini akan dihitung sebagai <span className="font-semibold text-orange-600">lembur</span>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Current Time Display */}
           <div className="bg-muted p-4 rounded-lg text-center">
             <p className="text-sm text-muted-foreground">Waktu Masuk</p>

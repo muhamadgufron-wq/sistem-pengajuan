@@ -10,6 +10,7 @@ import { CheckOutDialog } from '@/components/absensi/CheckOutDialog';
 import { toast } from 'sonner';
 import { Calendar, Clock, LogIn, LogOut, TrendingUp } from 'lucide-react';
 import { formatDate, formatTime } from '@/lib/utils/camera';
+import { isWednesday } from '@/lib/utils/attendance-utils';
 
 interface TodayAttendance {
   id: number;
@@ -198,11 +199,31 @@ export default function AbsensiPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Absensi</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold tracking-tight">Absensi</h1>
+        <p className="text-muted-foreground">
           {formatDate(currentTime)}
         </p>
       </div>
+
+      {/* Wednesday Holiday Banner */}
+      {isWednesday(currentTime) && (
+        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-700 dark:text-orange-300 mb-1">
+                  Hari Libur (Rabu)
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Anda tidak wajib check-in hari ini. Jika Anda melakukan check-in, akan dihitung sebagai{' '}
+                  <span className="font-semibold text-orange-600">lembur</span>.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Today's Attendance Card */}
       <Card>

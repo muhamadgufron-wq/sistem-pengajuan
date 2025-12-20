@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/app/lib/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const StatusBadge = ({ status }: { status: string }) => {
     const baseClasses = "px-3 py-1 text-xs font-medium rounded-full";
@@ -20,11 +22,14 @@ export default function StatusPengajuanPage() {
     const supabase = createClient();
     const router = useRouter();
     
-    const [pengajuanBarang, setPengajuanBarang] = useState([]);
-    const [pengajuanUang, setPengajuanUang] = useState([]);
-    const [pengajuanIzin, setPengajuanIzin] = useState([]);
+    const [pengajuanBarang, setPengajuanBarang] = useState<any[]>([]);
+    const [pengajuanUang, setPengajuanUang] = useState<any[]>([]);
+    const [pengajuanIzin, setPengajuanIzin] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('barang');
+    const [viewingProof, setViewingProof] = useState<string | null>(null);
+    const [currentSignedUrl, setCurrentSignedUrl] = useState<string | null>(null);
+    const [loadingImage, setLoadingImage] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -32,10 +37,26 @@ export default function StatusPengajuanPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) { router.push('/login'); return; }
 
-            // Panggil fungsi RPC baru untuk karyawan
-            const { data: barangData } = await supabase.rpc('get_my_barang_submissions');
-            const { data: uangData } = await supabase.rpc('get_my_uang_submissions');
-            const { data: izinData } = await supabase.rpc('get_my_leave_requests');
+            // Query langsung untuk pengajuan barang
+            const { data: barangData } = await supabase
+                .from('pengajuan_barang')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            // Query langsung untuk pengajuan uang (dengan bukti_transfer_url)
+            const { data: uangData } = await supabase
+                .from('pengajuan_uang')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            // Query langsung untuk pengajuan izin
+            const { data: izinData } = await supabase
+                .from('pengajuan_izin')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
 
             setPengajuanBarang(barangData || []);
             setPengajuanUang(uangData || []);
@@ -46,6 +67,50 @@ export default function StatusPengajuanPage() {
     }, [supabase, router]);
 
     const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // State untuk menyimpan signed URLs
+    const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+    // Helper function to get signed URL for transfer proof (private bucket)
+    const getTransferProofUrl = async (path: string | null) => {
+        if (!path) return null;
+        
+        // Check if already cached
+        if (signedUrls[path]) {
+            return signedUrls[path];
+        }
+
+        try {
+            const { data, error } = await supabase.storage
+                .from('bukti-transfer')
+                .createSignedUrl(path, 3600); // 1 hour expiry
+
+            if (error) {
+                console.error('Error creating signed URL:', error);
+                return null;
+            }
+
+            // Cache the URL
+            setSignedUrls(prev => ({ ...prev, [path]: data.signedUrl }));
+            return data.signedUrl;
+        } catch (error) {
+            console.error('Error:', error);
+            return null;
+        }
+    };
+
+    // Load signed URL when viewing proof
+    useEffect(() => {
+        if (viewingProof) {
+            setLoadingImage(true);
+            getTransferProofUrl(viewingProof).then(url => {
+                setCurrentSignedUrl(url);
+                setLoadingImage(false);
+            });
+        } else {
+            setCurrentSignedUrl(null);
+        }
+    }, [viewingProof, supabase]);
 
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
@@ -112,13 +177,28 @@ export default function StatusPengajuanPage() {
                                                     <p className="text-sm text-gray-600 mt-1">{item.keperluan}</p>
                                                         <p className="text-sm text-gray-500 mt-2">{item.nama_bank} - {item.nomor_rekening} (a.n {item.atas_nama})</p>
                                                     </div>
-                                                    <StatusBadge status={item.status} />
+                                                    <div className="flex flex-col gap-2 items-end">
+                                                        <StatusBadge status={item.status} />
+                                                        {/* Bukti Transfer Button */}
+                                                        {item.bukti_transfer_url && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => setViewingProof(item.bukti_transfer_url)}
+                                                                className="text-green-700 border-green-300 hover:bg-green-100"
+                                                            >
+                                                                Bukti Transfer
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             {item.catatan_admin && (
                                                 <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 text-sm">
                                                     <strong>Catatan Admin:</strong> {item.catatan_admin}
                                                 </div>
                                             )}
+                                            
+                                            
                                             <p className="text-xs text-gray-400 mt-3 text-right">Diajukan pada: {formatDate(item.created_at)}</p>
                                         </div>
                                     )) : <p>Belum ada riwayat pengajuan uang.</p>}
@@ -160,6 +240,44 @@ export default function StatusPengajuanPage() {
                     )}
                 </div>
             </div>
+            
+            {/* Dialog untuk tampilkan bukti transfer */}
+            <Dialog open={!!viewingProof} onOpenChange={() => setViewingProof(null)}>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Bukti Transfer</DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-4">
+                        {loadingImage ? (
+                            <div className="flex items-center justify-center h-64">
+                                <p className="text-muted-foreground">Memuat gambar...</p>
+                            </div>
+                        ) : currentSignedUrl ? (
+                            <img
+                                src={currentSignedUrl}
+                                alt="Bukti Transfer"
+                                className="w-full rounded-lg border"
+                                onError={(e) => {
+                                    console.error('Image load error');
+                                    e.currentTarget.src = '';
+                                }}
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center h-64">
+                                <p className="text-muted-foreground">Gagal memuat gambar</p>
+                            </div>
+                        )}
+                    </div>
+                    <div className="mt-4 flex justify-end">
+                        <Button
+                            variant="outline"
+                            onClick={() => setViewingProof(null)}
+                        >
+                            Tutup
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

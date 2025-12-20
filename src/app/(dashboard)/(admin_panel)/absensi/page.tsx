@@ -35,6 +35,7 @@ interface DailyStats {
   total_hadir: number;
   total_izin: number;
   total_sakit: number;
+  total_lembur: number;
   total_alpha: number;
 }
 
@@ -45,6 +46,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     sakit: { label: 'Sakit', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
     alpha: { label: 'Alpha', className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
     cuti: { label: 'Cuti', className: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
+    lembur: { label: 'Lembur', className: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
   };
 
   const statusInfo = statusMap[status] || statusMap.hadir;
@@ -253,6 +255,7 @@ export default function AdminAbsensiPage() {
       total_hadir: todayAttendanceData.filter((item) => item.status === 'hadir').length,
       total_izin: todayAttendanceData.filter((item) => item.status === 'izin').length,
       total_sakit: todayAttendanceData.filter((item) => item.status === 'sakit').length,
+      total_lembur: todayAttendanceData.filter((item) => item.status === 'lembur').length,
       total_alpha: totalAbsent, // Belum hadir = total karyawan - yang sudah absen hari ini
     };
   }, [todayAttendanceData, totalEmployees]);
@@ -428,22 +431,6 @@ export default function AdminAbsensiPage() {
                 className="pl-9"
               />
             </div>
-
-            {/* Status Filter */}
-            <Select onValueChange={(value) => setStatusFilter(value === 'all' ? '' : value)} value={statusFilter || 'all'}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Semua Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="hadir">Hadir</SelectItem>
-                <SelectItem value="izin">Izin</SelectItem>
-                <SelectItem value="sakit">Sakit</SelectItem>
-                <SelectItem value="alpha">Alpha</SelectItem>
-                <SelectItem value="cuti">Cuti</SelectItem>
-              </SelectContent>
-            </Select>
-
             {/* Date Range Pickers */}
             <Popover>
               <PopoverTrigger asChild>
@@ -533,7 +520,7 @@ export default function AdminAbsensiPage() {
                 </TableRow>
               ) : (
                 attendanceData.map((record) => (
-                  <TableRow key={record.id}>
+                  <TableRow key={`${record.user_id}-${record.tanggal}`}>
                     <TableCell className="font-medium">{record.full_name}</TableCell>
                     <TableCell>
                       {record.check_in_time ? (
@@ -656,7 +643,9 @@ export default function AdminAbsensiPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setViewingPhoto(null)}>
+            <Button className="bg-red-500 hover:bg-red-700 text-white"
+            size="sm" 
+            onClick={() => setViewingPhoto(null)}>
               Tutup
             </Button>
           </DialogFooter>
@@ -768,7 +757,7 @@ export default function AdminAbsensiPage() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setViewingDetail(null)}>
+            <Button className="bg-red-500 hover:bg-red-700 text-white" onClick={() => setViewingDetail(null)}>
               Tutup
             </Button>
           </DialogFooter>
@@ -826,7 +815,7 @@ export default function AdminAbsensiPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setViewingStatusList(null)}>
+            <Button className="bg-red-500 hover:bg-red-700 text-white" onClick={() => setViewingStatusList(null)}>
               Tutup
             </Button>
           </DialogFooter>
