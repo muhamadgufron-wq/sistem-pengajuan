@@ -47,6 +47,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import ProofGallery from "@/components/admin/ProofGallery";
+import ReimbursementProofGallery from "@/components/admin/ReimbursementProofGallery";
 
 const StatusBadge = ({ status }: { status: string }) => {
   let statusClasses = "";
@@ -122,6 +123,7 @@ export default function AdminPage() {
 
   const [pengajuanBarang, setPengajuanBarang] = useState<PengajuanBarang[]>([]);
   const [pengajuanUang, setPengajuanUang] = useState<PengajuanUang[]>([]);
+  const [pengajuanReimbursement, setPengajuanReimbursement] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("barang");
 
@@ -152,6 +154,7 @@ export default function AdminPage() {
     useState<string>("");
   const [viewingItem, setViewingItem] = useState<PengajuanItem | null>(null);
   const [buktiItem, setBuktiItem] = useState<PengajuanUang | null>(null);
+  const [reimbursementBuktiItem, setReimbursementBuktiItem] = useState<any | null>(null);
   const [imageLoadError, setImageLoadError] = useState(false);
   const [approvedQuantity, setApprovedQuantity] = useState<string>("");
 
@@ -179,14 +182,52 @@ export default function AdminPage() {
       "v2_get_all_uang_submissions",
       rpcParams
     );
+
+    // Fetch reimbursement data
+    const { data: reimbursementData, error: reimbursementError } = await supabase
+      .from('pengajuan_reimbursement')
+      .select('*')
+      .order('created_at', { ascending: false });
+
     if (barangError)
       toast.error("Error fetching barang", {
         description: barangError.message,
       });
     if (uangError)
       toast.error("Error fetching uang", { description: uangError.message });
+    if (reimbursementError)
+      toast.error("Error fetching reimbursement", { 
+        description: reimbursementError.message 
+      });
+
+    // Collect user IDs from all sources including reimbursement
+    const allUserIds = new Set<string>();
+    [...(barangData || []), ...(uangData || []), ...(reimbursementData || [])].forEach((item: any) => {
+      if (item.user_id) allUserIds.add(item.user_id);
+    });
+
+    // Fetch profiles for all users
+    const profilesMap = new Map<string, string>();
+    if (allUserIds.size > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', Array.from(allUserIds));
+      
+      profiles?.forEach(p => {
+        profilesMap.set(p.id, p.full_name);
+      });
+    }
+
+    // Transform reimbursement data to include full_name
+    const transformedReimbursement = reimbursementData?.map(item => ({
+      ...item,
+      full_name: profilesMap.get(item.user_id) || 'Unknown'
+    })) || [];
+
     setPengajuanBarang(barangData || []);
     setPengajuanUang(uangData || []);
+    setPengajuanReimbursement(transformedReimbursement);
     setIsLoading(false);
   }, [supabase, searchQuery, statusFilter, kategoriFilter, date]);
 
@@ -267,7 +308,9 @@ export default function AdminPage() {
     if (!editingItem) return;
 
     const tableName =
-      activeTab === "barang" ? "pengajuan_barang" : "pengajuan_uang";
+      activeTab === "barang" ? "pengajuan_barang" : 
+      activeTab === "uang" ? "pengajuan_uang" :
+      "pengajuan_reimbursement";
 
     const updateData: { [key: string]: any } = {
       status: newStatus,
@@ -275,7 +318,7 @@ export default function AdminPage() {
       kategori: newCategory,
     };
 
-    if (activeTab === "uang") {
+    if (activeTab === "uang" || activeTab === "reimbursement") {
       const finalAmount = parseFloat(approvedAmount);
       if (isNaN(finalAmount) || finalAmount < 0) {
         toast.error("Jumlah disetujui tidak valid.");
@@ -379,7 +422,9 @@ export default function AdminPage() {
       year: "numeric",
     });
   const displayedData =
-    activeTab === "barang" ? pengajuanBarang : pengajuanUang;
+    activeTab === "barang" ? pengajuanBarang : 
+    activeTab === "uang" ? pengajuanUang :
+    pengajuanReimbursement;
   const kategoriBarangOptions = [
     { value: "kantor", label: "Kantor" },
     { value: "gudang", label: "Gudang" },
@@ -741,6 +786,24 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog Bukti Reimbursement */}
+      <Dialog
+        open={!!reimbursementBuktiItem}
+        onOpenChange={(open) => !open && setReimbursementBuktiItem(null)}
+      >
+        <DialogContent className="sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Bukti Reimbursement</DialogTitle>
+            <DialogDescription>Pengajuan #{reimbursementBuktiItem?.id}</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            {reimbursementBuktiItem && (
+              <ReimbursementProofGallery reimbursementId={reimbursementBuktiItem.id} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ... (Layout Utama Halaman Anda tetap sama) ... */}
       <div className="h-full flex flex-col gap-6">
         <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border">
@@ -873,6 +936,19 @@ export default function AdminPage() {
                   >
                     Pengajuan Uang
                   </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("reimbursement");
+                      handleFilterReset();
+                    }}
+                    className={`${
+                      activeTab === "reimbursement"
+                        ? "border-primary text-primary font-semibold"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    } py-4 px-1 border-b-2`}
+                  >
+                    Reimbursement
+                  </button>
                 </div>
               </nav>
             </CardHeader>
@@ -969,7 +1045,8 @@ export default function AdminPage() {
                                   </div>
                                 );
                               })()
-                            : (() => {
+                            : activeTab === "uang"
+                            ? (() => {
                                 const uangItem = item as PengajuanUang;
                                 const diminta = uangItem.jumlah_uang;
                                 const disetujui = uangItem.jumlah_disetujui;
@@ -1014,13 +1091,60 @@ export default function AdminPage() {
                                     </div>
                                   </div>
                                 );
+                              })()
+                            : (() => {
+                                // Reimbursement
+                                const diminta = item.jumlah_uang;
+                                const disetujui = item.jumlah_disetujui;
+                                const isPartial =
+                                  disetujui != null && disetujui !== diminta;
+                                const isApprovedOrRejected =
+                                  item.status !== "pending";
+
+                                return (
+                                  <div>
+                                    {isPartial && isApprovedOrRejected ? (
+                                      <>
+                                        <div className="font-medium text-emerald-600">
+                                          Rp{" "}
+                                          {Number(disetujui).toLocaleString(
+                                            "id-ID"
+                                          )}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground line-through">
+                                          Rp{" "}
+                                          {Number(diminta).toLocaleString(
+                                            "id-ID"
+                                          )}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="font-medium">
+                                        Rp{" "}
+                                        {Number(
+                                          disetujui ?? diminta
+                                        ).toLocaleString("id-ID")}
+                                      </div>
+                                    )}
+
+                                    <div
+                                      className="text-xs text-muted-foreground truncate w-40"
+                                      title={item.keperluan}
+                                    >
+                                      {item.keperluan}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      {item.nama_bank} - {item.nomor_rekening}
+                                    </div>
+                                  </div>
+                                );
                               })()}
                         </TableCell>
 
                         <TableCell className="px-6 py-4">
                           {item.kategori ? (
                             <span className="px-2 py-0.5 bg-sky-100 text-sky-800 rounded-full text-xs font-medium">
-                              {item.kategori}
+                              {item.kategori.toUpperCase()}
                             </span>
                           ) : (
                             <span className="italic text-muted-foreground text-xs">
@@ -1045,6 +1169,18 @@ export default function AdminPage() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setBuktiItem(item as PengajuanUang);
+                              }}
+                            >
+                              Lihat Bukti
+                            </Button>
+                          )}
+                          {activeTab === "reimbursement" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setReimbursementBuktiItem(item);
                               }}
                             >
                               Lihat Bukti

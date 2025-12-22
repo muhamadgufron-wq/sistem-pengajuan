@@ -69,20 +69,33 @@ export default function ReportsPage() {
         .gte("created_at", `${startDate} 00:00:00`)
         .lte("created_at", `${endDate} 23:59:59`);
 
-      const [barangResult, uangResult] = await Promise.all([
+      const reimbursementQuery = supabase
+        .from("pengajuan_reimbursement")
+        .select(
+          "id, keperluan, jumlah_uang, jumlah_disetujui, status, created_at, user_id, kategori"
+        )
+        .gte("created_at", `${startDate} 00:00:00`)
+        .lte("created_at", `${endDate} 23:59:59`);
+
+      const [barangResult, uangResult, reimbursementResult] = await Promise.all([
         filters.tipe === "semua" || filters.tipe === "barang"
           ? barangQuery
           : Promise.resolve({ data: [], error: null }),
         filters.tipe === "semua" || filters.tipe === "uang"
           ? uangQuery
           : Promise.resolve({ data: [], error: null }),
+        filters.tipe === "semua"
+          ? reimbursementQuery
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (barangResult.error) throw barangResult.error;
       if (uangResult.error) throw uangResult.error;
+      if (reimbursementResult.error) throw reimbursementResult.error;
 
       const barangData = barangResult.data || [];
       const uangData = uangResult.data || [];
+      const reimbursementData = reimbursementResult.data || [];
 
       // Collect all user IDs
       const userIds = new Set<string>();
@@ -90,6 +103,9 @@ export default function ReportsPage() {
         if (item.user_id) userIds.add(item.user_id);
       });
       uangData.forEach((item) => {
+        if (item.user_id) userIds.add(item.user_id);
+      });
+      reimbursementData.forEach((item) => {
         if (item.user_id) userIds.add(item.user_id);
       });
 
@@ -148,6 +164,27 @@ export default function ReportsPage() {
           judul: item.keperluan,
           pengaju: profilesMap.get(item.user_id) || "Unknown",
           kategori: item.kategori,
+          nominal: nominal,
+          nominal_disetujui: item.jumlah_disetujui,
+          nominal_pengajuan: item.jumlah_uang,
+          status: item.status,
+          tanggal: item.created_at,
+        });
+      });
+
+      // Process Reimbursement (treat as Uang with kategori from database)
+      reimbursementData.forEach((item) => {
+        const isApproved = item.status.toLowerCase() === "disetujui";
+        const nominal = isApproved
+          ? item.jumlah_disetujui ?? item.jumlah_uang
+          : item.jumlah_uang;
+
+        details.push({
+          id: item.id,
+          tipe: "uang", // Treat as uang for Excel export
+          judul: item.keperluan, // No prefix
+          pengaju: profilesMap.get(item.user_id) || "Unknown",
+          kategori: item.kategori, // Use kategori from database (can be null)
           nominal: nominal,
           nominal_disetujui: item.jumlah_disetujui,
           nominal_pengajuan: item.jumlah_uang,

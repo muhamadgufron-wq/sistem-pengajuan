@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/app/lib/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import ProofGallery from '@/components/reimbursement/ProofGallery';
 
 const StatusBadge = ({ status }: { status: string }) => {
     const baseClasses = "px-3 py-1 text-xs font-medium rounded-full";
@@ -18,6 +19,88 @@ const StatusBadge = ({ status }: { status: string }) => {
     return <span className={`${baseClasses} ${statusClasses}`}>{status}</span>;
 };
 
+const ReimbursementCard = ({ item, formatDate }: { item: any; formatDate: (date: string) => string }) => {
+    const [proofFiles, setProofFiles] = useState<any[]>([]);
+    const [showProof, setShowProof] = useState(false);
+    const [loadingProof, setLoadingProof] = useState(false);
+    const supabase = createClient();
+
+    const loadProofFiles = async () => {
+        if (proofFiles.length > 0) {
+            setShowProof(true);
+            return;
+        }
+
+        setLoadingProof(true);
+        try {
+            const response = await fetch(`/api/reimbursement/${item.id}/bukti`);
+            if (response.ok) {
+                const { data } = await response.json();
+                setProofFiles(data || []);
+                setShowProof(true);
+            }
+        } catch (error) {
+            console.error('Error loading proof files:', error);
+        } finally {
+            setLoadingProof(false);
+        }
+    };
+
+    return (
+        <div className="bg-white p-5 rounded-lg shadow-sm border">
+            <div className="flex justify-between items-start">
+                <div>
+                    <div>
+                        {(item.status.toLowerCase() === 'disetujui' && item.jumlah_disetujui != null && item.jumlah_disetujui !== item.jumlah_uang)
+                            ? (
+                                <>
+                                    <p className="font-bold text-lg text-gray-800">
+                                        Rp {Number(item.jumlah_disetujui).toLocaleString('id-ID')}
+                                        <span className="text-sm text-emerald-500 ml-1">(Disetujui)</span>
+                                    </p>
+                                    <p className="text-sm text-muted-foreground line-through">
+                                        (Diminta: Rp {Number(item.jumlah_uang).toLocaleString('id-ID')})
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="font-bold text-lg text-gray-800">
+                                    Rp {Number(item.jumlah_uang).toLocaleString('id-ID')}
+                                </p>
+                            )
+                        }
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{item.keperluan}</p>
+                    <p className="text-sm text-gray-500 mt-2">{item.nama_bank} - {item.nomor_rekening} (a.n {item.atas_nama})</p>
+                </div>
+                <div className="flex flex-col gap-2 items-end">
+                    <StatusBadge status={item.status} />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={loadProofFiles}
+                        disabled={loadingProof}
+                        className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                    >
+                        {loadingProof ? 'Memuat...' : 'Lihat Bukti'}
+                    </Button>
+                </div>
+            </div>
+            {item.catatan_admin && (
+                <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 text-sm">
+                    <strong>Catatan Admin:</strong> {item.catatan_admin}
+                </div>
+            )}
+            {showProof && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="text-sm font-semibold mb-3">Bukti Pembelian/Struk</h4>
+                    <ProofGallery files={proofFiles} />
+                </div>
+            )}
+            <p className="text-xs text-gray-400 mt-3 text-right">Diajukan pada: {formatDate(item.created_at)}</p>
+        </div>
+    );
+};
+
 export default function StatusPengajuanPage() {
     const supabase = createClient();
     const router = useRouter();
@@ -25,6 +108,7 @@ export default function StatusPengajuanPage() {
     const [pengajuanBarang, setPengajuanBarang] = useState<any[]>([]);
     const [pengajuanUang, setPengajuanUang] = useState<any[]>([]);
     const [pengajuanIzin, setPengajuanIzin] = useState<any[]>([]);
+    const [pengajuanReimbursement, setPengajuanReimbursement] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('barang');
     const [viewingProof, setViewingProof] = useState<string | null>(null);
@@ -58,9 +142,17 @@ export default function StatusPengajuanPage() {
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
 
+            // Query langsung untuk reimbursement
+            const { data: reimbursementData } = await supabase
+                .from('pengajuan_reimbursement')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
             setPengajuanBarang(barangData || []);
             setPengajuanUang(uangData || []);
             setPengajuanIzin(izinData || []);
+            setPengajuanReimbursement(reimbursementData || []);
             setIsLoading(false);
         };
         fetchData();
@@ -120,7 +212,7 @@ export default function StatusPengajuanPage() {
                     <Link href="/dashboard" className="text-sm font-medium text-indigo-600 hover:underline">&larr; Kembali</Link>
                 </div>
                 
-                <div className="border-b border-gray-200"><nav className="-mb-px flex space-x-8"><button onClick={() => setActiveTab('barang')} className={`${activeTab === 'barang' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Barang</button><button onClick={() => setActiveTab('uang')} className={`${activeTab === 'uang' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Uang</button><button onClick={() => setActiveTab('izin')} className={`${activeTab === 'izin' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Izin</button></nav></div>
+                <div className="border-b border-gray-200"><nav className="-mb-px flex space-x-8"><button onClick={() => setActiveTab('barang')} className={`${activeTab === 'barang' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Barang</button><button onClick={() => setActiveTab('uang')} className={`${activeTab === 'uang' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Uang</button><button onClick={() => setActiveTab('reimbursement')} className={`${activeTab === 'reimbursement' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Reimbursement</button><button onClick={() => setActiveTab('izin')} className={`${activeTab === 'izin' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'} py-4 px-1 border-b-2 font-medium text-sm`}>Pengajuan Izin</button></nav></div>
 
                 <div className="mt-6">
                     {isLoading ? <p>Memuat data...</p> : (
@@ -202,6 +294,14 @@ export default function StatusPengajuanPage() {
                                             <p className="text-xs text-gray-400 mt-3 text-right">Diajukan pada: {formatDate(item.created_at)}</p>
                                         </div>
                                     )) : <p>Belum ada riwayat pengajuan uang.</p>}
+                                </div>
+                            )}
+                            
+                            {activeTab === 'reimbursement' && (
+                                <div className="space-y-4">
+                                    {pengajuanReimbursement.length > 0 ? pengajuanReimbursement.map((item: any) => (
+                                        <ReimbursementCard key={item.id} item={item} formatDate={formatDate} />
+                                    )) : <p>Belum ada riwayat reimbursement.</p>}
                                 </div>
                             )}
                             

@@ -61,29 +61,27 @@ export default function ExportButtons({ reportData, filters }: ExportProps) {
 
             const workbook = new ExcelJS.Workbook();
             
-            // Menggunakan IIFE untuk inisialisasi worksheet dan startRow sebagai const
-            const { worksheet, startRow } = await (async () => {
+            // Load template
+            const worksheet = await (async () => {
                 try {
-                    // Coba ambil template
                     const response = await fetch('/template_laporan.xlsx');
                     if (response.ok) {
                         const arrayBuffer = await response.arrayBuffer();
                         await workbook.xlsx.load(arrayBuffer);
                         const ws = workbook.getWorksheet('Laporan Pengajuan');
                         if (ws) {
-                            return { worksheet: ws, startRow: 5 };
+                            return ws;
                         }
                     }
                 } catch (e) {
-                    console.warn("Template tidak ditemukan, membuat file baru...");
+                    console.warn("Template tidak ditemukan:", e);
                 }
 
-                // Jika template tidak ada atau gagal load, buat baru
+                // Jika template tidak ada, buat file sederhana
                 const ws = workbook.addWorksheet('Laporan Pengajuan');
-
-                // Setup Header
                 ws.columns = [
                     { header: 'No', key: 'no', width: 5 },
+                    { header: 'Tipe', key: 'tipe', width: 10 },
                     { header: 'Judul / Keperluan', key: 'judul', width: 30 },
                     { header: 'Pengaju', key: 'pengaju', width: 20 },
                     { header: 'Kategori', key: 'kategori', width: 15 },
@@ -91,35 +89,89 @@ export default function ExportButtons({ reportData, filters }: ExportProps) {
                     { header: 'Status', key: 'status', width: 15 },
                     { header: 'Tanggal', key: 'tanggal', width: 15 },
                 ];
-                
-                // Style header
                 ws.getRow(1).font = { bold: true };
                 
-                return { worksheet: ws, startRow: 2 };
+                // Fill simple data
+                reportData.details.forEach((item, index) => {
+                    const row = ws.getRow(index + 2);
+                    row.getCell(1).value = index + 1;
+                    row.getCell(2).value = item.tipe;
+                    row.getCell(3).value = item.judul;
+                    row.getCell(4).value = item.pengaju;
+                    row.getCell(5).value = item.kategori || '-';
+                    row.getCell(6).value = item.nominal;
+                    row.getCell(7).value = item.status;
+                    row.getCell(8).value = new Date(item.tanggal);
+                    row.getCell(6).numFmt = item.tipe === 'uang' ? '"Rp "#,##0' : '0';
+                    row.getCell(8).numFmt = 'dd mmmm yyyy';
+                });
+                
+                return ws;
             })();
 
-            if (worksheet) {
-                 // Mengisi data detail
-                reportData.details.forEach((item, index) => {
-                    const row = worksheet.getRow(startRow + index);
-                    row.getCell(1).value = index + 1; // No
-                    row.getCell(2).value = item.judul; // Judul / Keperluan
-                    row.getCell(3).value = item.pengaju; // Pengaju
-                    row.getCell(4).value = item.kategori || '-'; // Kategori
-                    row.getCell(5).value = item.nominal; // Nominal / Jumlah
-                    row.getCell(6).value = item.status; // Status
-                    row.getCell(7).value = new Date(item.tanggal); // Tanggal
-                    
-                    // Format cell jika perlu (misal: number, date)
-                    row.getCell(5).numFmt = item.tipe === 'uang' ? '"Rp "#,##0' : '0';
-                    row.getCell(7).numFmt = 'dd mmmm yyyy';
-                });
-
-                // Mengisi data ringkasan (jika ada di template dan bukan file baru)
-                if (startRow === 5) {
-                    worksheet.getCell('B2').value = new Date(); 
-                    worksheet.getCell('C2').value = reportData.summary.total_requests; 
-                }
+            if (worksheet && worksheet.name === 'Laporan Pengajuan' && worksheet.rowCount >= 40) {
+                // Template ditemukan - isi sesuai struktur template
+                
+                // 1. ISI HEADER INFO (Rows 3-5)
+                const today = new Date();
+                const monthYear = today.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }).toUpperCase();
+                
+                worksheet.getCell('B3').value = ': PT. Wedding Organizer'; // Bisa diganti sesuai kebutuhan
+                worksheet.getCell('B4').value = `: ${reportData.summary.total_requests}`;
+                worksheet.getCell('B5').value = `: ${monthYear}`;
+                
+                // 2. PISAHKAN DATA BERDASARKAN TIPE
+                const dataUang = reportData.details.filter(d => d.tipe === 'uang');
+                const dataBarang = reportData.details.filter(d => d.tipe === 'barang');
+                
+                // 3. ISI PERMINTAAN DANA (Rows 12-36)
+                // Kategorisasi: VENDOR (A-C), KASBON (D-F), OPERASIONAL (G-I)
+                const vendorData = dataUang.filter(d => d.kategori?.toLowerCase() === 'vendor');
+                const kasbonData = dataUang.filter(d => d.kategori?.toLowerCase() === 'kasbon');
+                const operasionalData = dataUang.filter(d => d.kategori?.toLowerCase() === 'operasional');
+                
+                let currentRow = 12;
+                const maxDanaRows = 25; // Rows 12-36
+                
+                // Helper function to fill money data
+                const fillMoneyData = (data: typeof dataUang, startCol: number) => {
+                    let rowIndex = 12;
+                    data.slice(0, maxDanaRows).forEach(item => {
+                        const row = worksheet.getRow(rowIndex);
+                        row.getCell(startCol).value = item.judul; // ITEM
+                        row.getCell(startCol + 1).value = item.nominal; // NOMINAL
+                        row.getCell(startCol + 1).numFmt = '"Rp "#,##0';
+                        rowIndex++;
+                    });
+                };
+                
+                fillMoneyData(vendorData, 1); // Column A-B (VENDOR)
+                fillMoneyData(kasbonData, 4); // Column D-E (KASBON)
+                fillMoneyData(operasionalData, 7); // Column G-H (OPERASIONAL)
+                
+                // 4. ISI PERMINTAAN BARANG (Rows 42-56)
+                // Kategorisasi: KANTOR (A-C), GUDANG (D-F), STUDIO (G-I)
+                const kantorData = dataBarang.filter(d => d.kategori?.toLowerCase() === 'kantor');
+                const gudangData = dataBarang.filter(d => d.kategori?.toLowerCase() === 'gudang');
+                const studioData = dataBarang.filter(d => d.kategori?.toLowerCase() === 'studio');
+                
+                // Helper function to fill item data
+                const fillItemData = (data: typeof dataBarang, startCol: number, startRow: number, maxRows: number) => {
+                    let rowIndex = startRow;
+                    data.slice(0, maxRows).forEach(item => {
+                        const row = worksheet.getRow(rowIndex);
+                        row.getCell(startCol).value = item.judul; // ITEM
+                        row.getCell(startCol + 1).value = item.nominal; // JUMLAH
+                        row.getCell(startCol + 1).numFmt = '0';
+                        rowIndex++;
+                    });
+                };
+                
+                fillItemData(kantorData, 1, 42, 15); // Column A-B (KANTOR) rows 42-56
+                fillItemData(gudangData, 4, 42, 15); // Column D-E (GUDANG) rows 42-56
+                fillItemData(studioData, 7, 57, 19); // Column G-H (STUDIO) rows 57-75
+                
+                // Note: Formula di row 37 dan 76 sudah ada di template, akan auto-calculate
             }
 
             const buffer = await workbook.xlsx.writeBuffer();
