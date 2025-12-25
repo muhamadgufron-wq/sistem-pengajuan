@@ -22,14 +22,6 @@ interface WeeklyChartData {
   uang: number;
 }
 
-// Tipe untuk data transaksi terbaru
-interface RecentTransaction {
-  id: string;
-  full_name: string;
-  tipe_pengajuan: string;
-  total_estimasi_biaya: number;
-  status: string;
-}
 
 // Helper function untuk format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -80,10 +72,11 @@ export default function AdminDashboardPage() {
     const fetchAllData = async () => {
       setIsLoading(true);
       
-      // Kita panggil 3 fungsi RPC secara bersamaan
-      const [statsRes, chartRes] = await Promise.all([
+      // Kita panggil 2 fungsi RPC + 1 query untuk employee count secara bersamaan
+      const [statsRes, chartRes, employeeCountRes] = await Promise.all([
         supabase.rpc('get_dashboard_stat_cards'),
         supabase.rpc('get_dashboard_overview_chart'),
+        supabase.from('user_profiles_with_email').select('*', { count: 'exact', head: true })
       ]);
 
       // 1. Set data Stat Cards
@@ -91,7 +84,14 @@ export default function AdminDashboardPage() {
         toast.error("Gagal mengambil data kartu", { description: statsRes.error.message });
       } else {
         console.log('📊 Dashboard Stats:', statsRes.data[0]);
-        setStatCards(statsRes.data[0]); // Ambil baris pertama
+        console.log('👥 Employee Count:', employeeCountRes.count);
+        
+        // Merge employee count dengan data dari RPC
+        const statsWithEmployeeCount = {
+          ...statsRes.data[0],
+          total_karyawan: employeeCountRes.count ?? 0
+        };
+        setStatCards(statsWithEmployeeCount);
       }
       
       // 2. Set data Chart
