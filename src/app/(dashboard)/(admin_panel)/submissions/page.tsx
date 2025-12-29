@@ -103,12 +103,27 @@ interface PengajuanUang {
   catatan_admin: string;
   kategori: string | null;
 }
+interface PengajuanReimbursement {
+  id: number;
+  created_at: string;
+  jumlah_uang: number;
+  jumlah_disetujui: number | null;
+  keperluan: string;
+  status: string;
+  nama_bank: string;
+  nomor_rekening: string;
+  atas_nama: string;
+  user_id: string;
+  full_name: string;
+  catatan_admin: string;
+  kategori: string | null;
+}
 interface ViewingItem {
   id?: string | number;
   bukti_laporan_url?: string;
   [key: string]: any;
 }
-type PengajuanItem = PengajuanBarang | PengajuanUang;
+type PengajuanItem = PengajuanBarang | PengajuanUang | PengajuanReimbursement;
 
 // Fungsi untuk memformat nomor dengan pemisah ribuan
 const formatNumber = (value: string) => {
@@ -123,7 +138,7 @@ export default function AdminPage() {
 
   const [pengajuanBarang, setPengajuanBarang] = useState<PengajuanBarang[]>([]);
   const [pengajuanUang, setPengajuanUang] = useState<PengajuanUang[]>([]);
-  const [pengajuanReimbursement, setPengajuanReimbursement] = useState<any[]>([]);
+  const [pengajuanReimbursement, setPengajuanReimbursement] = useState<PengajuanReimbursement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("barang");
 
@@ -481,6 +496,11 @@ export default function AdminPage() {
                 {editingItem.keperluan}
               </p>
             )}
+            {editingItem && "jumlah_uang" in editingItem && "nama_bank" in editingItem && (
+              <p className="text-xs text-muted-foreground">
+                {editingItem.nama_bank} - {editingItem.nomor_rekening} (a.n {editingItem.atas_nama})
+              </p>
+            )}
           </div>
 
           <div className="grid gap-4 py-4 md:grid-cols-2">
@@ -619,7 +639,10 @@ export default function AdminPage() {
       {/* 🔽 --- DIALOG DETAIL DENGAN TAMPILAN NOMINAL BARU --- 🔽 */}
       <Dialog
         open={!!viewingItem}
-        onOpenChange={(open) => !open && setViewingItem(null)}
+        onOpenChange={(open) => {
+          console.log('Detail dialog onOpenChange:', open, 'viewingItem:', viewingItem?.id);
+          if (!open) setViewingItem(null);
+        }}
       >
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -724,6 +747,71 @@ export default function AdminPage() {
                       )}
                     </div>
                     {/* 🔼 AKHIR PERBAIKAN 🔼 */}
+                  </div>
+                  <div className="grid grid-cols-3 items-start gap-4 border-b pb-2">
+                    <span className="text-muted-foreground">Keperluan</span>
+                    <span className="col-span-2">{viewingItem.keperluan}</span>
+                  </div>
+                  <div className="grid grid-cols-3 items-center gap-4 border-b pb-2 pt-4">
+                    <span className="text-muted-foreground col-span-3 font-bold text-primary">
+                      Info Rekening
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 items-center gap-4 border-b pb-2">
+                    <span className="text-muted-foreground">Bank</span>
+                    <span className="col-span-2 font-medium">
+                      {viewingItem.nama_bank}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 items-center gap-4 border-b pb-2">
+                    <span className="text-muted-foreground">No. Rekening</span>
+                    <span className="col-span-2 font-medium">
+                      {viewingItem.nomor_rekening}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 items-center gap-4 border-b pb-2">
+                    <span className="text-muted-foreground">Atas Nama</span>
+                    <span className="col-span-2 font-medium">
+                      {viewingItem.atas_nama}
+                    </span>
+                  </div>
+                </>
+              )}
+
+            {activeTab === "reimbursement" &&
+              viewingItem &&
+              "jumlah_uang" in viewingItem && (
+                <>
+                  <div className="grid grid-cols-3 items-center gap-4 border-b pb-2">
+                    <span className="text-muted-foreground">Nominal</span>
+                    <div className="col-span-2">
+                      <span className="font-medium text-lg">
+                        Rp{" "}
+                        {Number(viewingItem.jumlah_uang).toLocaleString(
+                          "id-ID"
+                        )}
+                        <span className="text-sm text-muted-foreground ml-1">
+                          (Diajukan)
+                        </span>
+                      </span>
+
+                      {/* Tampilkan jumlah disetujui (jika ada, atau tampilkan 'belum diproses') */}
+                      {viewingItem.jumlah_disetujui != null ? (
+                        <span className="font-medium text-lg text-emerald-600 block">
+                          Rp{" "}
+                          {Number(viewingItem.jumlah_disetujui).toLocaleString(
+                            "id-ID"
+                          )}
+                          <span className="text-sm text-emerald-500 ml-1">
+                            (Disetujui)
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="font-medium text-sm text-muted-foreground block">
+                          (Belum ada nominal disetujui)
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="grid grid-cols-3 items-start gap-4 border-b pb-2">
                     <span className="text-muted-foreground">Keperluan</span>
@@ -989,7 +1077,10 @@ export default function AdminPage() {
                     displayedData.map((item) => (
                       <TableRow
                         key={item.id}
-                        onClick={() => setViewingItem(item)}
+                        onClick={() => {
+                          console.log('Row clicked, item:', item.id);
+                          setViewingItem(item);
+                        }}
                         className="cursor-pointer hover:bg-muted/50"
                       >
                         <TableCell className="px-6 py-4 font-medium">
@@ -1094,12 +1185,13 @@ export default function AdminPage() {
                               })()
                             : (() => {
                                 // Reimbursement
-                                const diminta = item.jumlah_uang;
-                                const disetujui = item.jumlah_disetujui;
+                                const reimbursementItem = item as PengajuanReimbursement;
+                                const diminta = reimbursementItem.jumlah_uang;
+                                const disetujui = reimbursementItem.jumlah_disetujui;
                                 const isPartial =
                                   disetujui != null && disetujui !== diminta;
                                 const isApprovedOrRejected =
-                                  item.status !== "pending";
+                                  reimbursementItem.status !== "pending";
 
                                 return (
                                   <div>
@@ -1129,12 +1221,12 @@ export default function AdminPage() {
 
                                     <div
                                       className="text-xs text-muted-foreground truncate w-40"
-                                      title={item.keperluan}
+                                      title={reimbursementItem.keperluan}
                                     >
-                                      {item.keperluan}
+                                      {reimbursementItem.keperluan}
                                     </div>
                                     <div className="text-xs text-muted-foreground mt-1">
-                                      {item.nama_bank} - {item.nomor_rekening}
+                                      {reimbursementItem.nama_bank} - {reimbursementItem.nomor_rekening}
                                     </div>
                                   </div>
                                 );
