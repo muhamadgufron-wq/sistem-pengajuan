@@ -137,13 +137,21 @@ export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps)
                 .eq('status', 'pending')
                 .gte('created_at', startOfWeekStr);
 
-            const totalSubmissions = (moneyCount || 0) + (itemCount || 0);
+            // Count pending reimbursement requests (this week only)
+            const { count: reimbursementCount } = await supabase
+                .from('pengajuan_reimbursement')
+                .select('id, status, created_at', { count: 'exact' })
+                .eq('status', 'pending')
+                .gte('created_at', startOfWeekStr);
+
+            const totalSubmissions = (moneyCount || 0) + (itemCount || 0) + (reimbursementCount || 0);
             const totalLeave = leaveCount || 0;
 
             console.log('📊 Badge (Minggu Ini):', {
                 startOfWeek: startOfWeek.toLocaleDateString('id-ID'),
                 money: moneyCount,
                 items: itemCount,
+                reimbursement: reimbursementCount,
                 leave: leaveCount,
                 total: totalSubmissions
             });

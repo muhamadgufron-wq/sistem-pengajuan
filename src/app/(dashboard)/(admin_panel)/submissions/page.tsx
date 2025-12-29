@@ -50,6 +50,7 @@ import ProofGallery from "@/components/admin/ProofGallery";
 import ReimbursementProofGallery from "@/components/admin/ReimbursementProofGallery";
 
 const StatusBadge = ({ status }: { status: string }) => {
+  console.log('StatusBadge received:', status);
   let statusClasses = "";
   switch (status?.toLowerCase()) {
     case "disetujui":
@@ -59,6 +60,10 @@ const StatusBadge = ({ status }: { status: string }) => {
     case "ditolak":
       statusClasses =
         "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      break;
+    case "pending":
+      statusClasses =
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
       break;
     default:
       statusClasses =
@@ -180,6 +185,13 @@ export default function AdminPage() {
   >(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // State untuk counting pending items
+  const [pendingCounts, setPendingCounts] = useState({
+    barang: 0,
+    uang: 0,
+    reimbursement: 0
+  });
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     const rpcParams = {
@@ -203,6 +215,61 @@ export default function AdminPage() {
       .from('pengajuan_reimbursement')
       .select('*')
       .order('created_at', { ascending: false });
+
+    // Fetch pending counts (Respect date filter only)
+    const fetchCounts = async () => {
+      let barangQuery = supabase
+        .from('pengajuan_barang')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      
+      let uangQuery = supabase
+        .from('pengajuan_uang')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      
+      let reimbursementQuery = supabase
+        .from('pengajuan_reimbursement')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      // Apply date filter if exists
+      if (date?.from) {
+        // Set start time to 00:00:00
+        const fromDate = new Date(date.from);
+        fromDate.setHours(0, 0, 0, 0);
+        const fromStr = fromDate.toISOString();
+
+        barangQuery = barangQuery.gte('created_at', fromStr);
+        uangQuery = uangQuery.gte('created_at', fromStr);
+        reimbursementQuery = reimbursementQuery.gte('created_at', fromStr);
+      }
+
+      if (date?.to) {
+        // Set end time to 23:59:59
+        const toDate = new Date(date.to);
+        toDate.setHours(23, 59, 59, 999);
+        const toStr = toDate.toISOString();
+
+        barangQuery = barangQuery.lte('created_at', toStr);
+        uangQuery = uangQuery.lte('created_at', toStr);
+        reimbursementQuery = reimbursementQuery.lte('created_at', toStr);
+      }
+
+      const [{ count: pendingBarang }, { count: pendingUang }, { count: pendingReimbursement }] = await Promise.all([
+        barangQuery,
+        uangQuery,
+        reimbursementQuery
+      ]);
+
+      setPendingCounts({
+        barang: pendingBarang || 0,
+        uang: pendingUang || 0,
+        reimbursement: pendingReimbursement || 0
+      });
+    };
+    
+    fetchCounts();
 
     if (barangError)
       toast.error("Error fetching barang", {
@@ -385,7 +452,33 @@ export default function AdminPage() {
       setApprovedQuantity("");
       setTransferProofFile(null);
       setTransferProofPreview(null);
-      fetchData();
+      
+      // Refresh data
+      await fetchData();
+      
+      // Update viewingItem if it's the same item that was edited
+      if (viewingItem && viewingItem.id === editingItem.id) {
+        // Fetch the updated item from database
+        const { data: updatedItem } = await supabase
+          .from(tableName)
+          .select('*')
+          .eq('id', editingItem.id)
+          .single();
+        
+        if (updatedItem) {
+          // Get full_name from profiles
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', updatedItem.user_id)
+            .single();
+          
+          setViewingItem({
+            ...updatedItem,
+            full_name: profile?.full_name || 'Unknown'
+          });
+        }
+      }
     }
   };
 
@@ -436,10 +529,52 @@ export default function AdminPage() {
       month: "long",
       year: "numeric",
     });
+
+  // Filter reimbursement data on client side
+  const getFilteredReimbursement = () => {
+    let filtered = pengajuanReimbursement;
+
+    // Search filter (nama pemohon atau keperluan)
+    if (searchQuery) {
+      filtered = filtered.filter(item =>
+        item.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.keperluan?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (statusFilter) {
+      filtered = filtered.filter(item => item.status === statusFilter);
+    }
+
+    // Kategori filter
+    if (kategoriFilter) {
+      filtered = filtered.filter(item => item.kategori === kategoriFilter);
+    }
+
+    // Date range filter - only apply if date range is set
+    if (date?.from && date?.to) {
+      filtered = filtered.filter(item => {
+        const itemDate = new Date(item.created_at);
+        itemDate.setHours(0, 0, 0, 0); // Reset time to start of day
+        
+        const from = new Date(date.from!);
+        from.setHours(0, 0, 0, 0);
+        
+        const to = new Date(date.to!);
+        to.setHours(23, 59, 59, 999); // Set to end of day
+        
+        return itemDate >= from && itemDate <= to;
+      });
+    }
+
+    return filtered;
+  };
+
   const displayedData =
     activeTab === "barang" ? pengajuanBarang : 
     activeTab === "uang" ? pengajuanUang :
-    pengajuanReimbursement;
+    getFilteredReimbursement();
   const kategoriBarangOptions = [
     { value: "kantor", label: "Kantor" },
     { value: "gudang", label: "Gudang" },
@@ -639,10 +774,7 @@ export default function AdminPage() {
       {/* 🔽 --- DIALOG DETAIL DENGAN TAMPILAN NOMINAL BARU --- 🔽 */}
       <Dialog
         open={!!viewingItem}
-        onOpenChange={(open) => {
-          console.log('Detail dialog onOpenChange:', open, 'viewingItem:', viewingItem?.id);
-          if (!open) setViewingItem(null);
-        }}
+        onOpenChange={(open) => !open && setViewingItem(null)}
       >
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -1007,9 +1139,14 @@ export default function AdminPage() {
                       activeTab === "barang"
                         ? "border-primary text-primary font-semibold"
                         : "border-transparent text-muted-foreground hover:text-foreground"
-                    } py-4 px-1 border-b-2`}
+                    } py-4 px-1 border-b-2 flex items-center`}
                   >
                     Pengajuan Barang
+                    {pendingCounts.barang > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                        {pendingCounts.barang}
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={() => {
@@ -1020,9 +1157,14 @@ export default function AdminPage() {
                       activeTab === "uang"
                         ? "border-primary text-primary font-semibold"
                         : "border-transparent text-muted-foreground hover:text-foreground"
-                    } py-4 px-1 border-b-2`}
+                    } py-4 px-1 border-b-2 flex items-center`}
                   >
                     Pengajuan Uang
+                    {pendingCounts.uang > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                        {pendingCounts.uang}
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={() => {
@@ -1033,9 +1175,14 @@ export default function AdminPage() {
                       activeTab === "reimbursement"
                         ? "border-primary text-primary font-semibold"
                         : "border-transparent text-muted-foreground hover:text-foreground"
-                    } py-4 px-1 border-b-2`}
+                    } py-4 px-1 border-b-2 flex items-center`}
                   >
                     Reimbursement
+                    {pendingCounts.reimbursement > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                        {pendingCounts.reimbursement}
+                      </span>
+                    )}
                   </button>
                 </div>
               </nav>
@@ -1077,10 +1224,7 @@ export default function AdminPage() {
                     displayedData.map((item) => (
                       <TableRow
                         key={item.id}
-                        onClick={() => {
-                          console.log('Row clicked, item:', item.id);
-                          setViewingItem(item);
-                        }}
+                        onClick={() => setViewingItem(item)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
                         <TableCell className="px-6 py-4 font-medium">
