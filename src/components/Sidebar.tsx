@@ -39,7 +39,7 @@ const NavLink = ({ href, icon: Icon, label, isSidebarOpen, pathname, badge }: {
                         <Button
                             className={`
                                 w-full text-base transition-all duration-300
-                                ${isSidebarOpen ? 'justify-start pl-4 h-11 py-2.5' : 'justify-center h-12'}
+                                ${isSidebarOpen ? 'justify-start pl-4 h-9 py-2' : 'justify-center h-12'}
                                 
                                 ${isActive 
                                   // Style Aktif (Latar hijau-100, Teks hijau-700)
@@ -222,14 +222,13 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
                     )}
                 </div>
                 {/* Menu Navigasi */}
-                <nav className="flex-1 px-3 py-6 space-y-3 overflow-y-auto overflow-x-hidden">
-                    <div>
-                        <NavLink href="/admin" icon={Home} label="Dashboard" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                    </div>
+                <nav className="flex-1 px-3 py-6 flex flex-col gap-1 overflow-y-auto overflow-x-hidden">
+                    <NavLink href="/admin" icon={Home} label="Dashboard" isSidebarOpen={isSidebarOpen} pathname={pathname} />
 
                     {/* Menu untuk Karyawan */}
                     {role === 'karyawan' && (
-                        <div className="space-y-3">
+                        <div className="flex flex-col gap-1 pt-1">
+                             {/* Optional Divider or Label could go here */}
                             <NavLink href="/my-absensi" icon={Calendar} label="Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                             <NavLink href="/status-pengajuan" icon={FileText} label="Status Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                         </div>
@@ -237,7 +236,7 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
 
                     {/* Menu untuk Admin & Superadmin */}
                     {(role === 'admin' || role === 'superadmin') && (
-                        <div className="space-y-3">
+                        <div className="flex flex-col gap-1 pt-1">
                             <NavLink href="/submissions" icon={FileText} label="Panel Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingSubmissions} />
                             <NavLink href="/pengajuan-izin" icon={ClipboardList} label="Pengajuan Izin" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingLeaveRequests} />
                             <NavLink href="/absensi" icon={Calendar} label="Panel Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
@@ -247,7 +246,7 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
 
                     {/* Menu khusus Superadmin */}
                     {role === 'superadmin' && (
-                        <div>
+                        <div className="flex flex-col gap-1 pt-1">
                             <NavLink href="/manage-users" icon={Users} label="Manajemen User" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                         </div>
                     )}

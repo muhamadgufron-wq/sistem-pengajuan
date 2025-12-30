@@ -12,6 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { UsersIcon, UserPlus, Trash2, Edit } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+  } from "@/components/ui/alert-dialog";
 
 interface UserWithRole {
   id: string;
@@ -99,7 +110,7 @@ export default function ManageUsersPage() {
 
   // 🔹 Hapus user
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus user ini?")) return;
+    
 
     const res = await fetch('/api/users/delete', {
     method: 'DELETE',
@@ -290,9 +301,25 @@ export default function ManageUsersPage() {
                           <Edit className="h-4 w-4" />
                         </Button>
                         {user.role !== 'superadmin' && (
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(user.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                           <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                             </AlertDialogTrigger>
+                             <AlertDialogContent>
+                               <AlertDialogHeader>
+                                 <AlertDialogTitle>Hapus Pengguna?</AlertDialogTitle>
+                                 <AlertDialogDescription>
+                                   Apakah Anda yakin ingin menghapus user <strong>{user.full_name}</strong>? Tindakan ini tidak dapat dibatalkan.
+                                 </AlertDialogDescription>
+                               </AlertDialogHeader>
+                               <AlertDialogFooter>
+                                 <AlertDialogCancel>Batal</AlertDialogCancel>
+                                 <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => handleDeleteUser(user.id)}>Hapus</AlertDialogAction>
+                               </AlertDialogFooter>
+                             </AlertDialogContent>
+                           </AlertDialog>
                         )}
                       </TableCell>
                     </TableRow>
