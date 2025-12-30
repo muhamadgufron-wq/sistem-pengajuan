@@ -40,34 +40,51 @@ export default function LaporanPenggunaanPage() {
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
 
+  /* State untuk Submission Status */
+  const [isSubmissionOpen, setIsSubmissionOpen] = useState(true);
+
   useEffect(() => {
     fetchApprovedPengajuan();
+    fetchSubmissionStatus();
   }, []);
+
+  const fetchSubmissionStatus = async () => {
+    try {
+        const res = await fetch('/api/settings/submission-status');
+        const data = await res.json();
+        if (data.success) {
+            setIsSubmissionOpen(data.isOpen);
+        }
+    } catch (error) {
+        console.error("Failed to fetch settings", error);
+    }
+  };
 
   const fetchApprovedPengajuan = async () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login');
+        // Handle unauthenticated state if necessary
         return;
       }
 
-      // Fetch approved pengajuan_uang
       const { data, error } = await supabase
         .from('pengajuan_uang')
-        .select('id, keperluan, jumlah_uang, jumlah_disetujui, created_at, status')
+        .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'disetujui')
+        .eq('status', 'approved_keuangan')
         .order('created_at', { ascending: false });
 
       if (error) {
-        toast.error('Gagal memuat data', { description: error.message });
+        toast.error('Gagal mengambil data pengajuan');
+        console.error(error);
       } else {
         setPengajuanList(data || []);
       }
     } catch (error: any) {
-      toast.error('Terjadi kesalahan', { description: error.message });
+      console.error('Error:', error);
+      toast.error('Terjadi kesalahan saat memuat data');
     } finally {
       setIsLoading(false);
     }
@@ -142,12 +159,25 @@ export default function LaporanPenggunaanPage() {
               Upload bukti penggunaan untuk pengajuan yang telah disetujui
             </p>
           </div>
-          <Link href="/dashboard">
-            <Button variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Kembali
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {!isSubmissionOpen && (
+                <div className="bg-red-100 text-red-700 px-4 py-2 rounded-md text-sm font-medium flex items-center">
+                    Pengajuan sedang ditutup sementara.
+                </div>
+            )}
+            <Link href={isSubmissionOpen ? "/laporan-penggunaan/buat" : "#"}>
+              <Button disabled={!isSubmissionOpen}>
+                <Upload className="mr-2 h-4 w-4" />
+                Buat Laporan
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button variant="outline">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Kembali
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Content */}

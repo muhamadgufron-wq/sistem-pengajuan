@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2Icon } from 'lucide-react';
+import { Trash2Icon, Lock } from 'lucide-react';
+import { useSubmissionStatus } from '@/hooks/use-submission-status';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 type User = { id: string; };
 type Item = { nama_barang: string; jumlah: number; alasan: string; };
@@ -19,6 +21,8 @@ export default function AjukanBarangPage() {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([{ nama_barang: '', jumlah: 1, alasan: '' }]);
   const [user, setUser] = useState<User | null>(null);
+  
+  const { isOpen, isLoading: isStatusLoading } = useSubmissionStatus();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -52,6 +56,32 @@ export default function AjukanBarangPage() {
       setItems([{ nama_barang: '', jumlah: 1, alasan: '' }]);
     }
   };
+
+
+  if (isStatusLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
+  }
+
+  if (!isOpen) {
+    return (
+      <div className="min-h-screen bg-secondary/40 p-4 flex items-center justify-center">
+        <Card className="max-w-md w-full text-center p-6">
+            <div className="flex justify-center mb-4">
+                <div className="p-3 bg-red-100 rounded-full">
+                    <Lock className="w-8 h-8 text-red-500" />
+                </div>
+            </div>
+            <h2 className="text-xl font-bold mb-2">Pengajuan Ditutup</h2>
+            <p className="text-muted-foreground mb-6">
+                Maaf, sistem pengajuan saat ini sedang ditutup sementara oleh admin. Silakan coba lagi nanti.
+            </p>
+            <Button asChild variant="default">
+                <Link href="/dashboard">Kembali ke Dashboard</Link>
+            </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-secondary/40 p-4 sm:p-6 lg:p-8">

@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/app/lib/supabase/client';
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, FileText, Banknote, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { Users, FileText, Banknote, TrendingUp, TrendingDown, Wallet, Settings } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 // Tipe untuk data 4 kartu di atas
@@ -64,6 +66,11 @@ const StatCard = ({ title, value, percentage, icon }: {
 
 export default function AdminDashboardPage() {
   const supabase = createClient();
+  /* State untuk Submission Toggle */
+  const [submissionOpen, setSubmissionOpen] = useState(true);
+  const [isToggling, setIsToggling] = useState(false);
+  
+  /* State untuk Dashboard Data */
   const [statCards, setStatCards] = useState<DashboardStatCards | null>(null);
   const [chartData, setChartData] = useState<WeeklyChartData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +79,17 @@ export default function AdminDashboardPage() {
     const fetchAllData = async () => {
       setIsLoading(true);
       
+      // Fetch settings status
+      try {
+        const settingsRes = await fetch('/api/settings/submission-status');
+        const settingsData = await settingsRes.json();
+        if (settingsData.success) {
+            setSubmissionOpen(settingsData.isOpen);
+        }
+      } catch (e) {
+        console.error("Failed to fetch settings", e);
+      }
+
       // Kita panggil 2 fungsi RPC + 1 query untuk employee count secara bersamaan
       const [statsRes, chartRes, employeeCountRes] = await Promise.all([
         supabase.rpc('get_dashboard_stat_cards'),
@@ -83,9 +101,6 @@ export default function AdminDashboardPage() {
       if (statsRes.error) {
         toast.error("Gagal mengambil data kartu", { description: statsRes.error.message });
       } else {
-        console.log('📊 Dashboard Stats:', statsRes.data[0]);
-        console.log('👥 Employee Count:', employeeCountRes.count);
-        
         // Merge employee count dengan data dari RPC
         const statsWithEmployeeCount = {
           ...statsRes.data[0],
@@ -105,6 +120,27 @@ export default function AdminDashboardPage() {
     
     fetchAllData();
   }, [supabase]);
+
+  const handleToggleSubmission = async (checked: boolean) => {
+    setIsToggling(true);
+    try {
+        const res = await fetch('/api/settings/submission-status', {
+            method: 'POST',
+            body: JSON.stringify({ isOpen: checked }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            setSubmissionOpen(checked);
+            toast.success(checked ? "Pengajuan DIBUKA" : "Pengajuan DITUTUP");
+        } else {
+            toast.error("Gagal mengubah status");
+        }
+    } catch (e) {
+        toast.error("Terjadi kesalahan sistem");
+    } finally {
+        setIsToggling(false);
+    }
+  };
   
   if (isLoading) {
     return (
@@ -118,6 +154,36 @@ export default function AdminDashboardPage() {
     // Kita gunakan padding `p-6` atau `p-8` seperti di desain
     <div className="p-6 md:p-8 space-y-6">
       
+      {/* --- KONTROL STATUS PENGAJUAN --- */}
+      <Card className="bg-primary/5 border-primary/20">
+        <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-4">
+                <div className={`p-2 rounded-full ${submissionOpen ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                    <Settings className="h-6 w-6" />
+                </div>
+                <div>
+                    <h3 className="font-semibold text-lg">Status Penerimaan Pengajuan</h3>
+                    <p className="text-sm text-muted-foreground">
+                        {submissionOpen 
+                            ? "Pengajuan saat ini DIBUKA. Karyawan dapat membuat permohonan baru." 
+                            : "Pengajuan saat ini DITUTUP. Karyawan tidak dapat membuat permohonan baru."}
+                    </p>
+                </div>
+            </div>
+            <div className="flex items-center gap-2">
+                <Label htmlFor="submission-mode" className="font-medium">
+                    {submissionOpen ? "Buka" : "Tutup"}
+                </Label>
+                <Switch 
+                    id="submission-mode" 
+                    checked={submissionOpen} 
+                    onCheckedChange={handleToggleSubmission}
+                    disabled={isToggling}
+                />
+            </div>
+        </CardContent>
+      </Card>
+
       {/* Grid untuk 4 Kartu Statistik */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 
