@@ -48,6 +48,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import ProofGallery from "@/components/admin/ProofGallery";
 import ReimbursementProofGallery from "@/components/admin/ReimbursementProofGallery";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 
 const StatusBadge = ({ status }: { status: string }) => {
   console.log('StatusBadge received:', status);
@@ -1206,9 +1207,9 @@ export default function AdminPage() {
                     <TableRow>
                       <TableCell
                         colSpan={6}
-                        className="h-24 text-center px-6 py-4"
+                        className="h-64 text-center px-6 py-4"
                       >
-                        Memuat...
+                        <LoadingSpinner />
                       </TableCell>
                     </TableRow>
                   ) : displayedData.length === 0 ? (

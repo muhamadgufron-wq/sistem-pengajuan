@@ -14,6 +14,7 @@ interface SidebarProps {
     fullName: string;
     role: string;
     isSidebarOpen: boolean;
+    setIsSidebarOpen?: (open: boolean) => void;
 }
 
 /**
@@ -84,7 +85,7 @@ const NavLink = ({ href, icon: Icon, label, isSidebarOpen, pathname, badge }: {
 };
 
 
-export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps) {
+export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpen }: SidebarProps) {
     const router = useRouter();
     const supabase = createClient();
     const pathname = usePathname();
@@ -92,6 +93,17 @@ export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps)
     // State for pending counts
     const [pendingSubmissions, setPendingSubmissions] = useState(0);
     const [pendingLeaveRequests, setPendingLeaveRequests] = useState(0);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Initial check for mobile
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 1024);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // Fetch pending counts
     useEffect(() => {
@@ -147,15 +159,6 @@ export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps)
             const totalSubmissions = (moneyCount || 0) + (itemCount || 0) + (reimbursementCount || 0);
             const totalLeave = leaveCount || 0;
 
-            console.log('📊 Badge (Minggu Ini):', {
-                startOfWeek: startOfWeek.toLocaleDateString('id-ID'),
-                money: moneyCount,
-                items: itemCount,
-                reimbursement: reimbursementCount,
-                leave: leaveCount,
-                total: totalSubmissions
-            });
-
             setPendingSubmissions(totalSubmissions);
             setPendingLeaveRequests(totalLeave);
         } catch (error) {
@@ -170,74 +173,107 @@ export default function Sidebar({ fullName, role, isSidebarOpen }: SidebarProps)
         router.refresh();
     };
 
+    // Close sidebar on mobile when route changes
+    useEffect(() => {
+        if (isMobile && setIsSidebarOpen) {
+            setIsSidebarOpen(false);
+        }
+    }, [pathname, isMobile, setIsSidebarOpen]);
+
+    const closeSidebarOnMobile = () => {
+        if (isMobile && setIsSidebarOpen) {
+            setIsSidebarOpen(false);
+        }
+    };
+
     return (
-        <aside className={`h-screen bg-card text-card-foreground flex flex-col border-r shadow-md transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
-            <div className={`border-b transition-all duration-300 ${isSidebarOpen ? 'p-6 h-auto opacity-100' : 'h-16 p-0'}`}>
-                {isSidebarOpen ? (
-                    // Tampilan Saat Terbuka
+        <>
+            {/* Backdrop for mobile */}
+            {isMobile && isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+                    onClick={closeSidebarOnMobile}
+                />
+            )}
+
+            <aside className={`
+                h-screen bg-card text-card-foreground flex flex-col border-r shadow-md transition-all duration-300
+                ${isMobile 
+                    ? `fixed inset-y-0 left-0 z-40 ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}`
+                    : `${isSidebarOpen ? 'w-64' : 'w-20'}`
+                }
+            `}>
+                <div className={`border-b transition-all duration-300 ${isSidebarOpen ? 'p-6 h-auto opacity-100' : 'h-16 p-0'}`}>
+                    {isSidebarOpen ? (
+                        // Tampilan Saat Terbuka
+                        <div>
+                            <h2 className="text-xl font-bold whitespace-nowrap">Sistem Pengajuan</h2>
+                            <p className="text-sm text-muted-foreground mt-2 whitespace-nowrap">
+                                Selamat datang, <br />
+                                <span className="font-semibold text-foreground">{fullName}</span>
+                            </p>
+                        </div>
+                    ) : (
+                        // Tampilan Saat Tertutup
+                        <div className="flex items-center justify-center h-16 flex-shrink-0">
+                            {/* ❗️ Ganti 'Settings' ini dengan logo Anda jika punya */}
+                            <Settings className="h-8 w-8 text-primary" /> 
+                        </div>
+                    )}
+                </div>
+                {/* Menu Navigasi */}
+                <nav className="flex-1 px-3 py-6 space-y-3 overflow-y-auto overflow-x-hidden">
                     <div>
-                        <h2 className="text-xl font-bold whitespace-nowrap">Sistem Pengajuan</h2>
-                        <p className="text-sm text-muted-foreground mt-2 whitespace-nowrap">
-                            Selamat datang, <br />
-                            <span className="font-semibold text-foreground">{fullName}</span>
-                        </p>
+                        <NavLink href="/admin" icon={Home} label="Dashboard" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                     </div>
-                ) : (
-                    // Tampilan Saat Tertutup
-                    <div className="flex items-center justify-center h-16 flex-shrink-0">
-                        {/* ❗️ Ganti 'Settings' ini dengan logo Anda jika punya */}
-                        <Settings className="h-8 w-8 text-primary" /> 
-                    </div>
-                )}
-            </div>
-            {/* Menu Navigasi */}
-            <nav className="flex-1 px-3 py-6 space-y-3 overflow-y-auto overflow-x-hidden">
-                <NavLink href="/admin" icon={Home} label="Dashboard" isSidebarOpen={isSidebarOpen} pathname={pathname} />
 
-                {/* Menu untuk Karyawan */}
-                {role === 'karyawan' && (
-                    <>
-                        <NavLink href="/my-absensi" icon={Calendar} label="Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                        <NavLink href="/status-pengajuan" icon={FileText} label="Status Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                    </>
-                )}
+                    {/* Menu untuk Karyawan */}
+                    {role === 'karyawan' && (
+                        <div className="space-y-3">
+                            <NavLink href="/my-absensi" icon={Calendar} label="Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                            <NavLink href="/status-pengajuan" icon={FileText} label="Status Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                        </div>
+                    )}
 
-                {/* Menu untuk Admin & Superadmin */}
-                {(role === 'admin' || role === 'superadmin') && (
-                    <>
-                        <NavLink href="/submissions" icon={FileText} label="Panel Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingSubmissions} />
-                        <NavLink href="/pengajuan-izin" icon={ClipboardList} label="Pengajuan Izin" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingLeaveRequests} />
-                        <NavLink href="/absensi" icon={Calendar} label="Panel Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                        <NavLink href="/reports" icon={BarChart3} label="Laporan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                    </>
-                )}
+                    {/* Menu untuk Admin & Superadmin */}
+                    {(role === 'admin' || role === 'superadmin') && (
+                        <div className="space-y-3">
+                            <NavLink href="/submissions" icon={FileText} label="Panel Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingSubmissions} />
+                            <NavLink href="/pengajuan-izin" icon={ClipboardList} label="Pengajuan Izin" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingLeaveRequests} />
+                            <NavLink href="/absensi" icon={Calendar} label="Panel Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                            <NavLink href="/reports" icon={BarChart3} label="Laporan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                        </div>
+                    )}
 
-                {/* Menu khusus Superadmin */}
-                {role === 'superadmin' && (
-                    <NavLink href="/manage-users" icon={Users} label="Manajemen User" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                )}
-            </nav>
+                    {/* Menu khusus Superadmin */}
+                    {role === 'superadmin' && (
+                        <div>
+                            <NavLink href="/manage-users" icon={Users} label="Manajemen User" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                        </div>
+                    )}
+                </nav>
 
-            {/* Tombol Logout di Bawah */}
-            <div className={`mt-auto border-t transition-all duration-300 ${isSidebarOpen ? 'px-4 py-5' : 'px-3 py-3'}`}>
-                <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                                <Button
-                                    variant="destructive"
-                                    className={`w-full transition-all duration-300 ${isSidebarOpen ? 'justify-start' : 'justify-center h-12'}`}
-                                    onClick={handleLogout}
-                                >
-                                    <LogOut className={`h-5 w-5 ${isSidebarOpen ? 'mr-2' : 'mr-0'}`} />
-                                    {isSidebarOpen && <span>Logout</span>}
-                                </Button>
-                        </TooltipTrigger>
-                        {!isSidebarOpen && (
-                            <TooltipContent side="right"><p>Logout</p></TooltipContent>
-                        )}
-                    </Tooltip>
-                </TooltipProvider>
-            </div>
-        </aside>
+                {/* Tombol Logout di Bawah */}
+                <div className={`mt-auto border-t transition-all duration-300 ${isSidebarOpen ? 'px-4 py-5' : 'px-3 py-3'}`}>
+                    <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                    <Button
+                                        variant="destructive"
+                                        className={`w-full transition-all duration-300 ${isSidebarOpen ? 'justify-start' : 'justify-center h-12'}`}
+                                        onClick={handleLogout}
+                                    >
+                                        <LogOut className={`h-5 w-5 ${isSidebarOpen ? 'mr-2' : 'mr-0'}`} />
+                                        {isSidebarOpen && <span>Logout</span>}
+                                    </Button>
+                            </TooltipTrigger>
+                            {!isSidebarOpen && (
+                                <TooltipContent side="right"><p>Logout</p></TooltipContent>
+                            )}
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            </aside>
+        </>
     );
 }

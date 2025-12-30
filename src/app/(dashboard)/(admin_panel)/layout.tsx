@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter, redirect } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client'; 
-import PageTransition from "@/components/PageTransition";
 import Sidebar from "@/components/Sidebar";
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 // Tipe untuk data user/profile
 type UserProfile = {
@@ -55,6 +55,23 @@ export default function AdminPanelLayout({
 
     };
     checkUserAndProfile();
+
+    // Auto-close sidebar on mobile resize
+    const handleResize = () => {
+        if (window.innerWidth < 1024) {
+            setIsSidebarOpen(false);
+        } else {
+            setIsSidebarOpen(true); // Optional: Auto-expand on desktop for better visibility
+        }
+    };
+
+    // Initial check
+    if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [supabase, router]);
 
   const toggleSidebar = () => {
@@ -62,22 +79,27 @@ export default function AdminPanelLayout({
   };
 
   if (isLoading || !profile) {
-    return <div className="flex h-screen items-center justify-center">Memuat data pengguna...</div>;
+    return (
+        <div className="flex h-screen items-center justify-center bg-secondary">
+             <LoadingSpinner />
+        </div>
+    );
   }
 
   return (
       // Container utama
       <div className="flex h-screen overflow-hidden bg-secondary">
-        <div className={`transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-64' : 'w-20'} overflow-hidden flex-shrink-0`}>
-             <Sidebar fullName={profile.full_name || 'Pengguna'} 
-                      role={profile.role || ''}
-                      isSidebarOpen={isSidebarOpen} />
-        </div>
+        <Sidebar 
+            fullName={profile.full_name || 'Pengguna'} 
+            role={profile.role || ''}
+            isSidebarOpen={isSidebarOpen}
+            setIsSidebarOpen={setIsSidebarOpen}
+        />
 
         {/* Konten Utama */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden w-full">
             {/* Header Konten (Tempat Tombol Hamburger) */}
-            <header className="h-16 flex-shrink-0 bg-card border-b flex items-center px-4">
+            <header className="h-16 flex-shrink-0 bg-card border-b flex items-center px-4 justify-between lg:justify-start">
                  <Button variant="ghost" size="icon" onClick={toggleSidebar} className="mr-4">
                     <Menu className="h-6 w-6" />
                  </Button>
@@ -85,10 +107,8 @@ export default function AdminPanelLayout({
             </header>
 
             {/* Area Konten yang Bisa Scroll */}
-            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-              <PageTransition>
-                  {children}
-              </PageTransition>
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full max-w-[1920px] mx-auto">
+                {children}
             </main>
         </div>
       </div>

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ArrowLeft, Upload, FileImage, Trash2, ExternalLink } from 'lucide-react';
 import MultiFileUpload from '@/components/laporan/MultiFileUpload';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 interface PengajuanUang {
   id: number;
@@ -132,9 +133,9 @@ export default function LaporanPenggunaanPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Laporan Penggunaan Uang</h1>
             <p className="text-sm text-gray-600 mt-1">
@@ -151,8 +152,8 @@ export default function LaporanPenggunaanPage() {
 
         {/* Content */}
         {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Memuat data...</p>
+          <div className="py-12">
+            <LoadingSpinner />
           </div>
         ) : pengajuanList.length === 0 ? (
           <Card>
@@ -167,22 +168,22 @@ export default function LaporanPenggunaanPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pengajuanList.map((pengajuan) => (
-              <Card key={pengajuan.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">
+              <Card key={pengajuan.id} className="hover:shadow-md transition-shadow flex flex-col h-full">
+                <CardHeader className="flex-1">
+                  <div className="flex flex-col h-full justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-lg line-clamp-2" title={pengajuan.keperluan}>
                         {pengajuan.keperluan}
                       </CardTitle>
                       <CardDescription className="mt-2">
                         <div className="space-y-1">
-                          <p>
-                            Nominal: Rp {Number(pengajuan.jumlah_disetujui || pengajuan.jumlah_uang).toLocaleString('id-ID')}
+                          <p className="font-medium text-foreground">
+                            Rp {Number(pengajuan.jumlah_disetujui || pengajuan.jumlah_uang).toLocaleString('id-ID')}
                           </p>
                           <p className="text-xs">
-                            Disetujui pada: {formatDate(pengajuan.created_at)}
+                            Disetujui: {formatDate(pengajuan.created_at)}
                           </p>
                         </div>
                       </CardDescription>
@@ -190,6 +191,7 @@ export default function LaporanPenggunaanPage() {
                     <Button
                       onClick={() => openUploadDialog(pengajuan)}
                       size="sm"
+                      className="w-full mt-auto"
                     >
                       <Upload className="mr-2 h-4 w-4" />
                       Upload Bukti

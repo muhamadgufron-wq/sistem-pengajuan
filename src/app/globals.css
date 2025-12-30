@@ -121,3 +121,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full hover:bg-muted-foreground/50 transition-colors;
+  }
+
+  /* Mobile safe area text adjustment */
+  .text-responsive {
+    @apply text-sm md:text-base;
+  }
+}
