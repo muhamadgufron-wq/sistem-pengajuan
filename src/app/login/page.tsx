@@ -40,15 +40,47 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true); 
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    
-    if (error) {
-      toast.error("Login Gagal", { description: error.message });
-      setIsLoading(false); 
-    } else {
-      toast.success("Login Berhasil!");
-      router.push('/dashboard');
-      router.refresh();
+    try {
+      // 1. Cek apakah email terdaftar menggunakan API (Bypass RLS)
+      const checkRes = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      const checkData = await checkRes.json();
+
+      if (!checkRes.ok) {
+        throw new Error(checkData.message || "Gagal memvalidasi email");
+      }
+
+      if (!checkData.exists) {
+        toast.error("Login Gagal", { description: "Email tidak terdaftar." });
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Jika email ada, lanjutkan login
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        // Karena kita sudah tahu emailnya ada, jika gagal di sini berarti password salah (atau isu server lain)
+        // Pesan default Supabase untuk invalid credentials biasanya "Invalid login credentials"
+        if (error.message.includes("Invalid login credentials")) {
+          toast.error("Login Gagal", { description: "Password salah." });
+        } else {
+          toast.error("Login Gagal", { description: error.message });
+        }
+        setIsLoading(false); 
+      } else {
+        toast.success("Login Berhasil!");
+        router.push('/dashboard');
+        router.refresh();
+      }
+
+    } catch (err: any) {
+      toast.error("Terjadi Kesalahan", { description: err.message });
+      setIsLoading(false);
     }
   };
 
