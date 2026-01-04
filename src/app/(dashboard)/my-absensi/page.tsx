@@ -199,8 +199,8 @@ export default function AbsensiPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Absensi</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-3xl font-bold tracking-tight text-center mt-2">Absensi</h1>
+        <p className="text-muted-foreground text-center mt-2">
           {formatDate(currentTime)}
         </p>
       </div>
@@ -216,7 +216,7 @@ export default function AbsensiPage() {
                   Hari Libur (Rabu)
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Anda tidak wajib check-in hari ini. Jika Anda melakukan check-in, akan dihitung sebagai{' '}
+                  Anda tidak wajib masuk hari ini. Jika Anda melakukan masuk, akan dihitung sebagai{' '}
                   <span className="font-semibold text-orange-600">lembur</span>.
                 </p>
               </div>

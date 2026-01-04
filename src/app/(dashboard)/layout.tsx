@@ -1,8 +1,7 @@
 import { createClient } from "@/app/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-// Layout ini hanya bertugas memastikan user sudah login
-// sebelum mengakses halaman karyawan manapun.
+
 export default async function DashboardLayout({
   children,
 }: {

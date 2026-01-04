@@ -73,7 +73,7 @@ export default function LaporanPenggunaanPage() {
         .from('pengajuan_uang')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'approved_keuangan')
+        .eq('status', 'disetujui')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -160,17 +160,6 @@ export default function LaporanPenggunaanPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            {!isSubmissionOpen && (
-                <div className="bg-red-100 text-red-700 px-4 py-2 rounded-md text-sm font-medium flex items-center">
-                    Pengajuan sedang ditutup sementara.
-                </div>
-            )}
-            <Link href={isSubmissionOpen ? "/laporan-penggunaan/buat" : "#"}>
-              <Button disabled={!isSubmissionOpen}>
-                <Upload className="mr-2 h-4 w-4" />
-                Buat Laporan
-              </Button>
-            </Link>
             <Link href="/dashboard">
               <Button variant="outline">
                 <ArrowLeft className="mr-2 h-4 w-4" />
