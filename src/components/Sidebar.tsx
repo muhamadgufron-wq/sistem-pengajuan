@@ -203,22 +203,14 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
                     : `${isSidebarOpen ? 'w-64' : 'w-20'}`
                 }
             `}>
-                <div className={`border-b transition-all duration-300 ${isSidebarOpen ? 'p-6 h-auto opacity-100' : 'h-16 p-0'}`}>
+                <div className={`border-b transition-all duration-300 flex items-center justify-center ${isSidebarOpen ? 'h-16' : 'h-16'}`}>
                     {isSidebarOpen ? (
-                        // Tampilan Saat Terbuka
-                        <div>
-                            <h2 className="text-xl font-bold whitespace-nowrap">Sistem Pengajuan</h2>
-                            <p className="text-sm text-muted-foreground mt-2 whitespace-nowrap">
-                                Selamat datang, <br />
-                                <span className="font-semibold text-foreground">{fullName}</span>
-                            </p>
+                        <div className="flex items-center gap-2 font-bold text-xl text-primary">
+                            <Settings className="h-6 w-6" />
+                            <span>Sistem Pengajuan</span>
                         </div>
                     ) : (
-                        // Tampilan Saat Tertutup
-                        <div className="flex items-center justify-center h-16 flex-shrink-0">
-                            {/* ❗️ Ganti 'Settings' ini dengan logo Anda jika punya */}
-                            <Settings className="h-8 w-8 text-primary" /> 
-                        </div>
+                        <Settings className="h-8 w-8 text-primary" /> 
                     )}
                 </div>
                 {/* Menu Navigasi */}
@@ -253,25 +245,7 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
                 </nav>
 
                 {/* Tombol Logout di Bawah */}
-                <div className={`mt-auto border-t transition-all duration-300 ${isSidebarOpen ? 'px-4 py-5' : 'px-3 py-3'}`}>
-                    <TooltipProvider delayDuration={0}>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                    <Button
-                                        variant="destructive"
-                                        className={`w-full transition-all duration-300 ${isSidebarOpen ? 'justify-start' : 'justify-center h-12'}`}
-                                        onClick={handleLogout}
-                                    >
-                                        <LogOut className={`h-5 w-5 ${isSidebarOpen ? 'mr-2' : 'mr-0'}`} />
-                                        {isSidebarOpen && <span>Logout</span>}
-                                    </Button>
-                            </TooltipTrigger>
-                            {!isSidebarOpen && (
-                                <TooltipContent side="right"><p>Logout</p></TooltipContent>
-                            )}
-                        </Tooltip>
-                    </TooltipProvider>
-                </div>
+
             </aside>
         </>
     );

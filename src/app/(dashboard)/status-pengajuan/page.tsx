@@ -19,7 +19,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     return <span className={`${baseClasses} ${statusClasses}`}>{status}</span>;
 };
 
-const ReimbursementCard = ({ item, formatDate }: { item: any; formatDate: (date: string) => string }) => {
+const ReimbursementCard = ({ item, formatDate, onViewProof }: { item: any; formatDate: (date: string) => string; onViewProof: (url: string) => void }) => {
     const [proofFiles, setProofFiles] = useState<any[]>([]);
     const [showProof, setShowProof] = useState(false);
     const [loadingProof, setLoadingProof] = useState(false);
@@ -74,6 +74,16 @@ const ReimbursementCard = ({ item, formatDate }: { item: any; formatDate: (date:
                 </div>
                 <div className="flex flex-col gap-2 items-end">
                     <StatusBadge status={item.status} />
+                    {item.bukti_transfer_url && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onViewProof(item.bukti_transfer_url)}
+                            className="text-green-700 border-green-300 hover:bg-green-100"
+                        >
+                            Bukti Transfer
+                        </Button>
+                    )}
                     <Button
                         variant="outline"
                         size="sm"
@@ -300,7 +310,7 @@ export default function StatusPengajuanPage() {
                             {activeTab === 'reimbursement' && (
                                 <div className="space-y-4">
                                     {pengajuanReimbursement.length > 0 ? pengajuanReimbursement.map((item: any) => (
-                                        <ReimbursementCard key={item.id} item={item} formatDate={formatDate} />
+                                        <ReimbursementCard key={item.id} item={item} formatDate={formatDate} onViewProof={(url) => setViewingProof(url)} />
                                     )) : <p>Belum ada riwayat reimbursement.</p>}
                                 </div>
                             )}

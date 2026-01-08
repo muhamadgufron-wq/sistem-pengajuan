@@ -210,7 +210,7 @@ export default function LaporanPenggunaanPage() {
                     <Button
                       onClick={() => openUploadDialog(pengajuan)}
                       size="sm"
-                      className="w-full mt-auto"
+                      className="w-full mt-auto bg-green-500 hover:bg-green-600"
                     >
                       <Upload className="mr-2 h-4 w-4" />
                       Upload Bukti

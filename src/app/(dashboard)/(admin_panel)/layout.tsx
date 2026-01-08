@@ -5,8 +5,9 @@ import { useRouter, redirect } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client'; 
 import Sidebar from "@/components/Sidebar";
 import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import { Menu, LogOut, User } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import { toast } from 'sonner';
 
 // Tipe untuk data user/profile
 type UserProfile = {
@@ -78,6 +79,13 @@ export default function AdminPanelLayout({
       setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const handleLogout = async () => {
+      await supabase.auth.signOut();
+      toast.success("Anda telah berhasil logout.");
+      router.push('/login');
+      router.refresh();
+  };
+
   if (isLoading || !profile) {
     return (
         <div className="flex h-screen items-center justify-center bg-secondary">
@@ -98,16 +106,38 @@ export default function AdminPanelLayout({
 
         {/* Konten Utama */}
         <div className="flex-1 flex flex-col overflow-hidden w-full">
-            {/* Header Konten (Tempat Tombol Hamburger) */}
-            <header className="h-16 flex-shrink-0 bg-card border-b flex items-center px-4 justify-between lg:justify-start">
-                 <Button variant="ghost" size="icon" onClick={toggleSidebar} className="mr-4">
-                    <Menu className="h-6 w-6" />
-                 </Button>
-                 {/* Anda bisa menambahkan elemen lain di header ini jika perlu */}
+            {/* Header Konten (Tempat Tombol Hamburger & Profile) */}
+            <header className="h-16 flex-shrink-0 bg-card border-b flex items-center justify-between px-4">
+                 <div className="flex items-center">
+                     <Button variant="ghost" size="icon" onClick={toggleSidebar} className="mr-4">
+                        <Menu className="h-6 w-6" />
+                     </Button>
+                     <h2 className="text-lg font-semibold lg:hidden">Admin Panel</h2>
+                 </div>
+                 
+                 {/* Profile & Logout Section */}
+                 <div className="flex items-center gap-4">
+                    <div className="text-right hidden sm:block">
+                        <p className="text-sm font-semibold text-foreground">{profile.full_name}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>
+                    </div>
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <User className="h-5 w-5" />
+                    </div>
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={handleLogout}
+                        className="text-muted-foreground hover:text-destructive"
+                        title="Logout"
+                    >
+                        <LogOut className="h-5 w-5" />
+                    </Button>
+                 </div>
             </header>
 
             {/* Area Konten yang Bisa Scroll */}
-            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full max-w-[1920px] mx-auto">
+            <main className="flex-1 overflow-y-auto w-full max-w-[1920px] mx-auto">
                 {children}
             </main>
         </div>

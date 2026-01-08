@@ -108,6 +108,7 @@ interface PengajuanUang {
   full_name: string;
   catatan_admin: string;
   kategori: string | null;
+  bukti_transfer_url?: string | null;
 }
 interface PengajuanReimbursement {
   id: number;
@@ -123,6 +124,7 @@ interface PengajuanReimbursement {
   full_name: string;
   catatan_admin: string;
   kategori: string | null;
+  bukti_transfer_url?: string | null;
 }
 interface ViewingItem {
   id?: string | number;
@@ -178,6 +180,7 @@ export default function AdminPage() {
   const [reimbursementBuktiItem, setReimbursementBuktiItem] = useState<any | null>(null);
   const [imageLoadError, setImageLoadError] = useState(false);
   const [approvedQuantity, setApprovedQuantity] = useState<string>("");
+  const [viewingTransferProofUrl, setViewingTransferProofUrl] = useState<string | null>(null);
 
   // State untuk upload bukti transfer
   const [transferProofFile, setTransferProofFile] = useState<File | null>(null);
@@ -337,6 +340,20 @@ export default function AdminPage() {
     checkAdminAndFetchData();
   }, [fetchData, router, supabase]);
 
+  useEffect(() => {
+    const fetchProofUrl = async () => {
+      if (viewingItem && 'bukti_transfer_url' in viewingItem && viewingItem.bukti_transfer_url) {
+        const { data } = await supabase.storage
+          .from('bukti-transfer')
+          .createSignedUrl(viewingItem.bukti_transfer_url as string, 3600);
+        if (data?.signedUrl) setViewingTransferProofUrl(data.signedUrl);
+      } else {
+        setViewingTransferProofUrl(null);
+      }
+    };
+    fetchProofUrl();
+  }, [viewingItem, supabase]);
+
   // Handle file selection for transfer proof
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -421,7 +438,7 @@ export default function AdminPage() {
     }
 
     // Upload bukti transfer if exists and status is 'disetujui'
-    if (transferProofFile && activeTab === 'uang' && newStatus === 'disetujui') {
+    if (transferProofFile && (activeTab === 'uang' || activeTab === 'reimbursement') && newStatus === 'disetujui') {
       setIsUploading(true);
       try {
         const proofUrl = await uploadTransferProof(editingItem.id, editingItem.user_id);
@@ -483,19 +500,36 @@ export default function AdminPage() {
     }
   };
 
-  const openUpdateDialog = (item: PengajuanItem) => {
+  const openUpdateDialog = async (item: PengajuanItem) => {
+    // Reset states first
+    setTransferProofFile(null);
+    setTransferProofPreview(null);
+    
+    // Set initial item state to show dialog
     setEditingItem(item);
     setNewStatus(item.status);
     setAdminNote(item.catatan_admin || "");
     setNewCategory(item.kategori || "");
 
+    // Fetch fresh data to ensure we have bukti_transfer_url
     if ("jumlah_uang" in item) {
-      const amount =
-        (item as PengajuanUang).jumlah_disetujui ??
-        (item as PengajuanUang).jumlah_uang;
-      setApprovedAmount(String(amount));
-      setDisplayApprovedAmount(formatNumber(String(amount)));
-      setApprovedQuantity("");
+       const tableName = activeTab === 'uang' ? 'pengajuan_uang' : 'pengajuan_reimbursement';
+       const { data: freshData } = await supabase
+         .from(tableName)
+         .select('*')
+         .eq('id', item.id)
+         .single();
+       
+       if (freshData) {
+         setEditingItem(prev => prev ? { ...prev, ...freshData } : null);
+       }
+
+       const amount =
+         (item as PengajuanUang).jumlah_disetujui ??
+         (item as PengajuanUang).jumlah_uang;
+       setApprovedAmount(String(amount));
+       setDisplayApprovedAmount(formatNumber(String(amount)));
+       setApprovedQuantity("");
     } else {
       const quantity =
         (item as PengajuanBarang).jumlah_disetujui ??
@@ -503,6 +537,25 @@ export default function AdminPage() {
       setApprovedQuantity(String(quantity));
       setApprovedAmount("");
       setDisplayApprovedAmount("");
+    }
+  };
+
+
+  const handleViewDetail = async (item: PengajuanItem) => {
+    setViewingItem(item); // Show immediately
+    
+    // Fetch fresh data for Uang/Reimbursement to get bukti_transfer_url
+    if (activeTab === 'uang' || activeTab === 'reimbursement') {
+        const tableName = activeTab === 'uang' ? 'pengajuan_uang' : 'pengajuan_reimbursement';
+        const { data } = await supabase
+            .from(tableName)
+            .select('bukti_transfer_url') // We only strictly need this field
+            .eq('id', item.id)
+            .single();
+            
+        if (data) {
+            setViewingItem(prev => (prev && prev.id === item.id) ? { ...prev, bukti_transfer_url: data.bukti_transfer_url } : prev);
+        }
     }
   };
 
@@ -723,6 +776,22 @@ export default function AdminPage() {
             {editingItem && 'jumlah_uang' in editingItem && newStatus === 'disetujui' && (
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium">Bukti Transfer</label>
+                
+                {/* Tampilkan bukti transfer yang sudah ada jika ada */}
+                {editingItem.bukti_transfer_url && !transferProofPreview && (
+                   <div className="mb-2 p-2 border rounded-lg bg-muted/20">
+                      <p className="text-xs font-medium mb-2 text-muted-foreground">Bukti Transfer Tersimpan:</p>
+                      <img
+                        src={getTransferProofUrl(editingItem.bukti_transfer_url) || ''}
+                        alt="Bukti Transfer Tersimpan"
+                        className="w-full h-40 object-cover rounded mb-2"
+                      />
+                      <p className="text-xs text-muted-foreground italic">
+                        Upload file baru di bawah jika ingin mengganti.
+                      </p>
+                   </div>
+                )}
+
                 <Input
                   type="file"
                   accept="image/*,application/pdf"
@@ -730,13 +799,13 @@ export default function AdminPage() {
                   className="cursor-pointer"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Upload bukti transfer (Maks. 5MB, format: JPG, PNG, PDF)
+                  {editingItem.bukti_transfer_url ? "Ganti bukti transfer (Opsional)" : "Upload bukti transfer (Maks. 5MB, format: JPG, PNG, PDF)"}
                 </p>
                 
-                {/* Preview */}
+                {/* Preview Upload Baru */}
                 {transferProofPreview && (
                   <div className="mt-2 border rounded-lg p-2">
-                    <p className="text-xs font-medium mb-2">Preview:</p>
+                    <p className="text-xs font-medium mb-2">Preview Upload Baru:</p>
                     <img
                       src={transferProofPreview}
                       alt="Preview Bukti Transfer"
@@ -752,7 +821,7 @@ export default function AdminPage() {
                         setTransferProofPreview(null);
                       }}
                     >
-                      Hapus Foto
+                      Batal Ganti / Hapus
                     </Button>
                   </div>
                 )}
@@ -908,6 +977,30 @@ export default function AdminPage() {
                       {viewingItem.atas_nama}
                     </span>
                   </div>
+                  {viewingItem.status === 'disetujui' && (
+                    <div className="grid grid-cols-3 items-start gap-4 border-b pb-2">
+                      <span className="text-muted-foreground">Bukti Transfer</span>
+                      <div className="col-span-2">
+                         {viewingItem.bukti_transfer_url ? (
+                           viewingTransferProofUrl ? (
+                             <img 
+                                src={viewingTransferProofUrl} 
+                                alt="Bukti Transfer" 
+                                className="max-w-[200px] max-h-[200px] object-cover rounded border"
+                             />
+                           ) : (
+                             <div className="h-[200px] w-[200px] bg-muted animate-pulse rounded flex items-center justify-center text-xs text-muted-foreground">
+                               Memuat...
+                             </div>
+                           )
+                         ) : (
+                           <span className="italic text-muted-foreground text-sm">
+                             Sedang dalam proses approved
+                           </span>
+                         )}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -973,6 +1066,30 @@ export default function AdminPage() {
                       {viewingItem.atas_nama}
                     </span>
                   </div>
+                  {viewingItem.status === 'disetujui' && (
+                    <div className="grid grid-cols-3 items-start gap-4 border-b pb-2">
+                      <span className="text-muted-foreground">Bukti Transfer</span>
+                      <div className="col-span-2">
+                         {viewingItem.bukti_transfer_url ? (
+                           viewingTransferProofUrl ? (
+                             <img 
+                                src={viewingTransferProofUrl} 
+                                alt="Bukti Transfer" 
+                                className="max-w-[200px] max-h-[200px] object-cover rounded border"
+                             />
+                           ) : (
+                             <div className="h-[200px] w-[200px] bg-muted animate-pulse rounded flex items-center justify-center text-xs text-muted-foreground">
+                               Memuat...
+                             </div>
+                           )
+                         ) : (
+                           <span className="italic text-muted-foreground text-sm">
+                             Sedang dalam proses approved
+                           </span>
+                         )}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -1026,7 +1143,7 @@ export default function AdminPage() {
       </Dialog>
 
       {/* ... (Layout Utama Halaman Anda tetap sama) ... */}
-      <div className="h-full flex flex-col gap-6">
+      <div className="h-full flex flex-col gap-6 p-6">
         <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border">
           <div className="flex-shrink-0 border-b pb-6">
             <CardHeader>
@@ -1225,7 +1342,7 @@ export default function AdminPage() {
                     displayedData.map((item) => (
                       <TableRow
                         key={item.id}
-                        onClick={() => setViewingItem(item)}
+                        onClick={() => handleViewDetail(item)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
                         <TableCell className="px-6 py-4 font-medium">

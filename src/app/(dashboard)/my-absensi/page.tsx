@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button';
 import { CheckInDialog } from '@/components/absensi/CheckInDialog';
 import { CheckOutDialog } from '@/components/absensi/CheckOutDialog';
 import { toast } from 'sonner';
-import { Calendar, Clock, LogIn, LogOut, TrendingUp } from 'lucide-react';
+import { Calendar, Clock, LogIn, LogOut, TrendingUp, AlertTriangle } from 'lucide-react';
 import { formatDate, formatTime } from '@/lib/utils/camera';
 import { isWednesday } from '@/lib/utils/attendance-utils';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 interface TodayAttendance {
   id: number;
@@ -53,6 +55,7 @@ export default function AbsensiPage() {
   const router = useRouter();
 
   const [todayAttendance, setTodayAttendance] = useState<TodayAttendance | null>(null);
+  const [incompleteAttendance, setIncompleteAttendance] = useState<TodayAttendance | null>(null);
   const [stats, setStats] = useState<AttendanceStats | null>(null);
   const [history, setHistory] = useState<AttendanceHistory[]>([]);
   const [approvedLeave, setApprovedLeave] = useState<ApprovedLeave | null>(null);
@@ -78,6 +81,25 @@ export default function AbsensiPage() {
       if (!user) {
         router.push('/login');
         return;
+      }
+
+      // Check for incomplete past attendance first
+      const { data: incompleteData } = await supabase
+        .from('absensi')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('check_out_time', null)
+        .lt('tanggal', new Date().toISOString().split('T')[0])
+        .order('tanggal', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (incompleteData) {
+        setIncompleteAttendance(incompleteData);
+        // If incomplete exists, we don't necessarily need today's data immediately for check-in purposes,
+        // but fetching it handles edge cases where they might have somehow checked in today already.
+      } else {
+        setIncompleteAttendance(null);
       }
 
       // Fetch today's attendance
@@ -225,7 +247,41 @@ export default function AbsensiPage() {
         </Card>
       )}
 
-      {/* Today's Attendance Card */}
+      {/* Incomplete Attendance Warning */}
+      {incompleteAttendance && (
+        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-red-700 dark:text-red-300 mb-2">
+                  Absen Pulang Belum Selesai!
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Anda belum melakukan absen pulang untuk tanggal{' '}
+                  <span className="font-bold text-red-600 dark:text-red-400">
+                    {format(new Date(incompleteAttendance.tanggal), 'EEEE, d MMMM yyyy', { locale: id })}
+                  </span>
+                  . Silakan lengkapi absen pulang terlebih dahulu sebelum melakukan absen hari ini.
+                </p>
+                <Button 
+                  onClick={() => setShowCheckOutDialog(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Input Jam Pulang
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
+      {/* Today's Attendance Card - Only Show if NO Incomplete Attendance */}
+      {!incompleteAttendance && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -341,8 +397,7 @@ export default function AbsensiPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Monthly Statistics */}
+      )}  {/* Monthly Statistics */}
       {stats && (
         <Card>
           <CardHeader>
@@ -429,12 +484,13 @@ export default function AbsensiPage() {
         onSuccess={handleCheckInSuccess}
       />
 
-      {hasCheckedIn && todayAttendance?.check_in_time && (
+      {((hasCheckedIn && todayAttendance?.check_in_time) || incompleteAttendance) && (
         <CheckOutDialog
           open={showCheckOutDialog}
           onOpenChange={setShowCheckOutDialog}
           onSuccess={handleCheckOutSuccess}
-          checkInTime={todayAttendance.check_in_time}
+          checkInTime={incompleteAttendance?.check_in_time || todayAttendance?.check_in_time || new Date().toISOString()}
+          attendanceDate={incompleteAttendance?.tanggal}
         />
       )}
     </div>
