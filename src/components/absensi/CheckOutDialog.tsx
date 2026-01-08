@@ -190,7 +190,14 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
           <div className="bg-muted p-4 rounded-lg space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Masuk</span>
-              <span className="font-medium">{formatTime(checkInDate)}</span>
+              <span className="font-medium flex items-center gap-2">
+                {formatTime(checkInDate)}
+                {isPastCheckout && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    ({format(checkInDate, 'dd MMM')})
+                  </span>
+                )}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Pulang</span>

@@ -83,15 +83,17 @@ export default function AbsensiPage() {
         return;
       }
 
-      // Check for incomplete past attendance first
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      // Check for incomplete past attendance (YESTERDAY ONLY)
       const { data: incompleteData } = await supabase
         .from('absensi')
         .select('*')
         .eq('user_id', user.id)
         .is('check_out_time', null)
-        .lt('tanggal', new Date().toISOString().split('T')[0])
-        .order('tanggal', { ascending: false })
-        .limit(1)
+        .eq('tanggal', yesterdayStr)
         .single();
 
       if (incompleteData) {
@@ -489,7 +491,11 @@ export default function AbsensiPage() {
           open={showCheckOutDialog}
           onOpenChange={setShowCheckOutDialog}
           onSuccess={handleCheckOutSuccess}
-          checkInTime={incompleteAttendance?.check_in_time || todayAttendance?.check_in_time || new Date().toISOString()}
+          checkInTime={
+            incompleteAttendance 
+              ? (incompleteAttendance.check_in_time || new Date(incompleteAttendance.tanggal).toISOString())
+              : (todayAttendance?.check_in_time || new Date().toISOString())
+          }
           attendanceDate={incompleteAttendance?.tanggal}
         />
       )}
