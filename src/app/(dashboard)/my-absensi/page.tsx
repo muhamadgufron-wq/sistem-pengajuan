@@ -1,4 +1,4 @@
-const getTodayDate = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,6 +13,8 @@ import { formatDate, formatTime } from '@/lib/utils/camera';
 import { isWednesday } from '@/lib/utils/attendance-utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+
+const getTodayDate = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
 interface TodayAttendance {
   id: number;
