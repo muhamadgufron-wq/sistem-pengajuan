@@ -1,4 +1,4 @@
-'use client';
+const getTodayDate = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -85,7 +85,7 @@ export default function AbsensiPage() {
 
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const yesterdayStr = yesterday.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
       // Check for incomplete past attendance (YESTERDAY ONLY)
       const { data: incompleteData } = await supabase
@@ -109,7 +109,7 @@ export default function AbsensiPage() {
         .from('absensi')
         .select('*')
         .eq('user_id', user.id)
-        .eq('tanggal', new Date().toISOString().split('T')[0])
+        .eq('tanggal', getTodayDate())
         .single();
 
       if (todayError && todayError.code !== 'PGRST116') {
@@ -143,7 +143,7 @@ export default function AbsensiPage() {
         .from('absensi')
         .select('tanggal, check_in_time, check_out_time, status, check_in_keterangan')
         .eq('user_id', user.id)
-        .gte('tanggal', sevenDaysAgo.toISOString().split('T')[0])
+        .gte('tanggal', sevenDaysAgo.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }))
         .order('tanggal', { ascending: false })
         .limit(7);
 
@@ -157,7 +157,7 @@ export default function AbsensiPage() {
       const { data: leaveData, error: leaveError } = await supabase
         .rpc('check_approved_leave_for_date', {
           p_user_id: user.id,
-          p_date: new Date().toISOString().split('T')[0],
+          p_date: getTodayDate(),
         });
 
       if (leaveError) {
@@ -494,7 +494,7 @@ export default function AbsensiPage() {
           checkInTime={
             incompleteAttendance 
               ? (incompleteAttendance.check_in_time || new Date(incompleteAttendance.tanggal).toISOString())
-              : (todayAttendance?.check_in_time || new Date().toISOString())
+              : (todayAttendance?.check_in_time || new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
           }
           attendanceDate={incompleteAttendance?.tanggal}
         />

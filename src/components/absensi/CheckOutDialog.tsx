@@ -14,6 +14,8 @@ import { Loader2, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
+const getTodayDate = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+
 interface CheckOutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -127,7 +129,7 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
       };
 
       // Determine date to update
-      const targetDate = attendanceDate || new Date().toISOString().split('T')[0];
+            const targetDate = attendanceDate || getTodayDate();
 
       const { error: updateError } = await supabase
         .from('absensi')
