@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 // ❗️ 'Settings' sudah tidak diperlukan lagi, kecuali Anda mau ganti logo
-import { Home, FileText, Users, LogOut, BarChart3, Settings, Calendar, ClipboardList } from 'lucide-react'; 
+import { Home, FileText, Users, LogOut, BarChart3, Settings, Calendar, ClipboardList, Briefcase } from 'lucide-react'; 
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useEffect } from 'react';
@@ -203,11 +203,13 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
                     : `${isSidebarOpen ? 'w-64' : 'w-20'}`
                 }
             `}>
-                <div className={`border-b transition-all duration-300 flex items-center justify-center ${isSidebarOpen ? 'h-16' : 'h-16'}`}>
+                <div className={`border-b transition-all duration-300 flex items-center justify-center ${isSidebarOpen ? 'h-20' : 'h-20'}`}>
                     {isSidebarOpen ? (
-                        <div className="flex items-center gap-2 font-bold text-xl text-primary">
-                            <Settings className="h-6 w-6" />
-                            <span>Sistem Pengajuan</span>
+                        <div className="flex flex-col items-center px-2 text-center">
+                            <div className="flex items-center gap-2 font-bold text-base text-primary">
+                                <span>Sistem Informasi Manajemen</span>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-medium mt-0.5">PT. Wedding Organizer Indonesia</span>
                         </div>
                     ) : (
                         <Settings className="h-8 w-8 text-primary" /> 
@@ -240,12 +242,10 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
                     {role === 'superadmin' && (
                         <div className="flex flex-col gap-1 pt-1">
                             <NavLink href="/manage-users" icon={Users} label="Manajemen User" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                            <NavLink href="/data-karyawan" icon={Briefcase} label="Data Karyawan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                         </div>
                     )}
                 </nav>
-
-                {/* Tombol Logout di Bawah */}
-
             </aside>
         </>
     );
