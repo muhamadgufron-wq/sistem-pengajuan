@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-// ❗️ 'Settings' sudah tidak diperlukan lagi, kecuali Anda mau ganti logo
 import { Home, FileText, Users, LogOut, BarChart3, Settings, Calendar, ClipboardList, Briefcase } from 'lucide-react'; 
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
