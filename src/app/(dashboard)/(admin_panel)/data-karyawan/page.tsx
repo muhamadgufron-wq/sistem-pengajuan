@@ -37,7 +37,9 @@ export default function DataKaryawanPage() {
   const fetchEmployees = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/employees');
+      const res = await fetch(`/api/employees?t=${new Date().getTime()}`, {
+        cache: 'no-store'
+      });
       const data = await res.json();
       
       if (data.success) {

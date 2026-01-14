@@ -24,6 +24,8 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
+    console.log('[UPDATE EMP] Body:', body);
+
     const { 
       id, 
       nik, 
@@ -39,22 +41,47 @@ export async function PUT(request: Request) {
         return NextResponse.json({ success: false, message: 'User ID is required' }, { status: 400 });
     }
 
-    // Update profiles check
-    const { error: updateError } = await supabase
+    // Sanitize data
+    const payload = {
+        nik: nik || null,
+        division: division || null,
+        position: position || null,
+        phone_number: phone_number || null,
+        address: address || null,
+        join_date: join_date === '' ? null : join_date,
+        employment_status: employment_status || null
+        // removed updated_at as it doesn't exist
+    };
+    
+    console.log('[UPDATE EMP] Payload:', payload);
+
+    // Update profiles using Service Role to bypass RLS
+    // Standard client logic failed likely due to "Users can only update their own profile" policy
+    const { createClient: createAdminClient } = require('@supabase/supabase-js');
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!serviceRoleKey) {
+        throw new Error('Service Role Key missing');
+    }
+
+    const supabaseAdmin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
+    );
+
+    const { error: updateError } = await supabaseAdmin
       .from('profiles')
-      .update({
-        nik,
-        division,
-        position,
-        phone_number,
-        address,
-        join_date,
-        employment_status,
-        updated_at: new Date().toISOString()
-      })
+      .update(payload)
       .eq('id', id);
 
     if (updateError) {
+      console.error('[UPDATE EMP] DB Error:', updateError);
       throw updateError;
     }
 

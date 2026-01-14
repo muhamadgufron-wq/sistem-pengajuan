@@ -8,13 +8,13 @@ export async function GET() {
   const supabase = createClient();
 
   try {
-    // Cek autentikasi
+    // 1. Cek Autentikasi Standard
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Cek role admin/superadmin
+    // 2. Cek Role (menggunakan public 'profiles' check)
     const { data: currentUserProfile } = await supabase
       .from('profiles')
       .select('role')
@@ -25,36 +25,62 @@ export async function GET() {
       return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 });
     }
 
-    // Ambil semua data profil
-    // Menggunakan view 'user_profiles_with_email' jika ada, atau join manual jika perlu. 
-    // Namun karena kita baru saja alter table 'profiles', kita ambil dari 'profiles' langsung.
-    // Tetapi 'profiles' biasanya tidak punya email (ada di auth.users). 
-    // Kita asumsikan ada view atau kita ambil dari profiles saja dan email mungkin perlu join.
-    // PS: Di ManageUsersPage mereka pakai 'user_profiles_with_email'.
-    // Mari kita cek apakah view tersebut punya kolom baru? Tidak otomatis.
-    // Jadi sebaiknya kita query 'profiles' dan 'auth.users' atau gunakan view jika sudah diupdate.
-    // Karena user baru menjalankan SQL alter table profiles, view tidak otomatis update.
-    // Workaround: Ambil dari profiles, karena detail karyawan ada di profiles. Email mungkin tidak krusial untuk fitur 'Data Karyawan' detail, tapi bagus jika ada.
-    // Untuk amannya, kita select * dari profiles.
+    // 3. Setup Admin Client (Bypass RLS & Access Auth)
+    // Gunakan 'require' untuk fetch jika belum diimport statis
+    const { createClient: createAdminClient } = require('@supabase/supabase-js');
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .neq('role', 'superadmin')
-      .order('full_name', { ascending: true });
-
-    if (error) {
-      throw error;
+    if (!serviceRoleKey) {
+        throw new Error('Service Role Key missing');
     }
 
-    // Kita perlu email juga sebenarnya. 
-    // Jika view 'user_profiles_with_email' belum di update definisinya, kolom baru tidak akan muncul disana.
-    // Tapi kita bisa enrich data di client atau query terpisah jika butuh email urgent.
-    // Untuk sekarang kita return data profiles saja, karena detail karyawan ada disitu.
-    // Jika butuh email, kita bisa fetch user emails via admin function but that requires service role.
-    // Atau kita asumsikan 'profiles' is the source of truth for employee data.
+    const supabaseAdmin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
+    );
 
-    return NextResponse.json({ success: true, data });
+    // 4. Ambil Data Profiles (Raw Table) - Bypass RLS
+    // Explicitly select columns to ensure we get what we need
+    const { data: profiles, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .neq('role', 'superadmin') 
+      .order('full_name', { ascending: true });
+
+    if (profileError) throw profileError;
+
+    // 5. Ambil Data Emails dari Auth Users
+    // listUsers paginates, but for typical internal apps < 1000 users it's ok to fetch page 1 with big limit
+    // or we can just ignore email if listUsers is too heavy, but explicit request is nice.
+    const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+        perPage: 1000
+    });
+    
+    if (authError) console.error("Auth fetch error:", authError);
+
+    // 6. Merge Data
+    const combinedData = profiles.map((p: any) => {
+        const u = users?.find((u: any) => u.id === p.id);
+        return {
+            ...p,
+            email: u?.email || 'No Email'
+        };
+    });
+
+    console.log(`[GET EMP] Returning ${combinedData.length} records`);
+    // Log sample
+    if(combinedData.length > 0) {
+        const sample = combinedData.find((d: any) => d.division) || combinedData[0];
+        console.log('[GET EMP] Sample merged:', JSON.stringify(sample, null, 2));
+    }
+
+    return NextResponse.json({ success: true, data: combinedData });
 
   } catch (error: any) {
     console.error('Error fetching employees:', error);
