@@ -6,16 +6,15 @@ import Link from 'next/link';
 import { createClient } from '@/app/lib/supabase/client';
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Upload, X } from 'lucide-react';
+import { CalendarIcon, ChevronLeft, Upload, X, CloudUpload } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 type User = { id: string; };
 
@@ -52,12 +51,10 @@ export default function AjukanIzinPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Ukuran file maksimal 5 MB');
         return;
       }
-      // Validate file type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
       if (!allowedTypes.includes(file.type)) {
         toast.error('Format file harus JPG, PNG, atau PDF');
@@ -112,16 +109,13 @@ export default function AjukanIzinPage() {
     setIsSubmitting(true);
 
     try {
-      // Upload bukti if exists
       let buktiUrl: string | null = null;
       if (buktiFile) {
         buktiUrl = await uploadBukti(user.id);
       }
 
-      // Calculate number of days
       const jumlahHari = calculateDays(tanggalMulai, tanggalSelesai);
 
-      // Insert pengajuan izin
       const { error } = await supabase
         .from('pengajuan_izin')
         .insert({
@@ -139,12 +133,12 @@ export default function AjukanIzinPage() {
         toast.error("Gagal Mengajukan", { description: error.message });
       } else {
         toast.success("Pengajuan Izin Berhasil Dikirim!");
-        // Reset form
         setJenis('');
         setTanggalMulai(undefined);
         setTanggalSelesai(undefined);
         setAlasan('');
         setBuktiFile(null);
+        router.push('/dashboard');
       }
     } catch (error: any) {
       toast.error("Terjadi kesalahan", { description: error.message });
@@ -153,177 +147,174 @@ export default function AjukanIzinPage() {
     }
   };
 
-  const jumlahHari = tanggalMulai && tanggalSelesai ? calculateDays(tanggalMulai, tanggalSelesai) : 0;
-
   return (
-    <div className="min-h-screen bg-secondary/40 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-3xl mx-auto">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-2xl font-bold">Pengajuan Izin</CardTitle>
-                <CardDescription className="mt-1">
-                  Ajukan izin, sakit, atau cuti dengan mengisi form di bawah ini
-                </CardDescription>
+    <div className="min-h-screen bg-white text-slate-800 font-sans">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100/50 px-4 h-16 flex items-center">
+        <Link href="/dashboard" className="p-2 -ml-2 rounded-full hover:bg-gray-50 transition-colors">
+          <ChevronLeft className="w-6 h-6 text-slate-600" />
+        </Link>
+        <h1 className="flex-1 text-center text-lg font-bold text-slate-800 -ml-4">
+          Pengajuan Izin
+        </h1>
+      </div>
+
+      <div className="max-w-xl mx-auto p-6 pb-40 space-y-6">
+        <form onSubmit={handleSubmit}>
+          
+          {/* Main Card: Details */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-6 space-y-6">
+            
+            {/* Jenis Izin */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-800">Jenis Izin</label>
+              <Select value={jenis} onValueChange={setJenis} required>
+                <SelectTrigger className="bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500 rounded-xl h-12">
+                  <SelectValue placeholder="Pilih jenis izin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="izin">Izin</SelectItem>
+                  <SelectItem value="sakit">Sakit</SelectItem>
+                  <SelectItem value="cuti">Cuti</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Periode Izin */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-800">Periode Izin</label>
+              <div className="grid grid-cols-2 gap-4">
+                
+                {/* Tanggal Mulai */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500">Tanggal Mulai</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500 rounded-xl h-12 px-4"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+                        {tanggalMulai ? format(tanggalMulai, 'dd/MM/yyyy') : <span className="text-gray-400">dd/mm/yyyy</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={tanggalMulai}
+                        onSelect={setTanggalMulai}
+                        initialFocus
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Tanggal Selesai */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500">Tanggal Selesai</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500 rounded-xl h-12 px-4"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+                        {tanggalSelesai ? format(tanggalSelesai, 'dd/MM/yyyy') : <span className="text-gray-400">dd/mm/yyyy</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={tanggalSelesai}
+                        onSelect={setTanggalSelesai}
+                        initialFocus
+                        disabled={(date) => {
+                          const today = new Date(new Date().setHours(0, 0, 0, 0));
+                          if (date < today) return true;
+                          if (tanggalMulai && date < tanggalMulai) return true;
+                          return false;
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
               </div>
-              <Button variant="ghost" asChild>
-                <Link href="/dashboard">&larr; Kembali</Link>
+            </div>
+
+            {/* Alasan */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-800">Alasan</label>
+              <Textarea
+                value={alasan}
+                onChange={(e) => setAlasan(e.target.value)}
+                placeholder="Jelaskan alasan pengajuan izin Anda..."
+                className="bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500 rounded-xl min-h-[120px] p-4 placeholder:text-gray-400 resize-none"
+                required
+              />
+            </div>
+
+          </div>
+
+          {/* Dokumen Pendukung */}
+          <div className="mb-6">
+            <label className="text-sm font-bold text-slate-800 block mb-2">Dokumen Pendukung</label>
+            <div 
+              className={`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
+                buktiFile ? 'border-emerald-500 bg-emerald-50' : 'border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/50'
+              }`}
+              onClick={() => document.getElementById('bukti')?.click()}
+            >
+              <Input
+                id="bukti"
+                type="file"
+                accept="image/jpeg,image/png,image/jpg,application/pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              
+              {buktiFile ? (
+                <div className="flex flex-col items-center">
+                   <div className="bg-white p-3 rounded-full shadow-sm mb-3">
+                     <span className="text-2xl">📄</span>
+                   </div>
+                   <p className="text-sm font-bold text-slate-700">{buktiFile.name}</p>
+                   <p className="text-xs text-slate-500 mt-1">{(buktiFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                   <Button 
+                      type="button" 
+                      variant="ghost" 
+                      onClick={(e) => { e.stopPropagation(); setBuktiFile(null); }}
+                      className="mt-2 text-red-500 hover:text-red-600 hover:bg-red-50 px-3 h-8 text-xs font-bold"
+                   >
+                     Hapus File
+                   </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                    <CloudUpload className="w-8 h-8 text-emerald-500" />
+                  </div>
+                  <h4 className="text-emerald-500 font-bold mb-1">Unggah Dokumen</h4>
+                  <p className="text-slate-400 text-xs text-center max-w-[200px]">
+                    Format PDF atau JPG (Maks. 5MB)
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Fixed Bottom Button */}
+            <div className="max-w-xl mx-auto">
+              <Button 
+                type="submit" 
+                className="w-full h-14 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg shadow-emerald-200 shadow-lg translate-y-0 active:translate-y-1 transition-all"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <LoadingSpinner className="text-white" /> : "Ajukan Izin"}
               </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Jenis Izin */}
-              <div className="space-y-2">
-                <Label htmlFor="jenis">Jenis Izin *</Label>
-                <Select value={jenis} onValueChange={setJenis} required>
-                  <SelectTrigger id="jenis">
-                    <SelectValue placeholder="Pilih jenis izin..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="izin">Izin</SelectItem>
-                    <SelectItem value="sakit">Sakit</SelectItem>
-                    <SelectItem value="cuti">Cuti</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Tanggal Mulai */}
-              <div className="space-y-2">
-                <Label>Tanggal Mulai *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {tanggalMulai ? format(tanggalMulai, 'dd MMMM yyyy', { locale: localeId }) : "Pilih tanggal mulai"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={tanggalMulai}
-                      onSelect={setTanggalMulai}
-                      initialFocus
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Tanggal Selesai */}
-              <div className="space-y-2">
-                <Label>Tanggal Selesai *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {tanggalSelesai ? format(tanggalSelesai, 'dd MMMM yyyy', { locale: localeId }) : "Pilih tanggal selesai"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={tanggalSelesai}
-                      onSelect={setTanggalSelesai}
-                      initialFocus
-                      disabled={(date) => {
-                        const today = new Date(new Date().setHours(0, 0, 0, 0));
-                        if (date < today) return true;
-                        if (tanggalMulai && date < tanggalMulai) return true;
-                        return false;
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Jumlah Hari (Auto-calculated) */}
-              {jumlahHari > 0 && (
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Jumlah Hari: <span className="text-lg font-bold">{jumlahHari}</span> hari
-                  </p>
-                </div>
-              )}
-
-              {/* Alasan */}
-              <div className="space-y-2">
-                <Label htmlFor="alasan">Alasan *</Label>
-                <Textarea
-                  id="alasan"
-                  value={alasan}
-                  onChange={(e) => setAlasan(e.target.value)}
-                  rows={4}
-                  placeholder="Jelaskan alasan pengajuan izin..."
-                  required
-                />
-              </div>
-
-              {/* Upload Bukti */}
-              <div className="space-y-2">
-                <Label htmlFor="bukti">Bukti Pendukung (Opsional)</Label>
-                <p className="text-xs text-muted-foreground">
-                  Upload surat dokter, surat keterangan, dll. (Max 5MB, format: JPG, PNG, PDF)
-                </p>
-                {buktiFile ? (
-                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{buktiFile.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(buktiFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setBuktiFile(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="bukti"
-                      type="file"
-                      accept="image/jpeg,image/png,image/jpg,application/pdf"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById('bukti')?.click()}
-                      className="w-full"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Pilih File
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Submit Button */}
-              <div className="pt-4 border-t">
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Mengirim...' : 'Kirim Pengajuan'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        </form>
       </div>
     </div>
   );

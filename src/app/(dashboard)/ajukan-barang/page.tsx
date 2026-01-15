@@ -1,62 +1,90 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/app/lib/supabase/client';
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2Icon, Lock } from 'lucide-react';
+import { ChevronLeft, CloudUpload, Lock, Minus, Plus } from 'lucide-react';
 import { useSubmissionStatus } from '@/hooks/use-submission-status';
 import LoadingSpinner from '@/components/ui/loading-spinner';
-
-type User = { id: string; };
-type Item = { nama_barang: string; jumlah: number; alasan: string; };
+import { Card } from "@/components/ui/card";
 
 export default function AjukanBarangPage() {
   const supabase = createClient();
   const router = useRouter();
-  const [items, setItems] = useState<Item[]>([{ nama_barang: '', jumlah: 1, alasan: '' }]);
-  const [user, setUser] = useState<User | null>(null);
+  
+  // State for single item submission
+  const [namaBarang, setNamaBarang] = useState('');
+  const [jumlah, setJumlah] = useState(1);
+  const [alasan, setAlasan] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
   const { isOpen, isLoading: isStatusLoading } = useSubmissionStatus();
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/login'); } 
-      else { setUser(user as User); }
-    };
-    checkUser();
-  }, [router, supabase.auth]);
-
-  const handleItemChange = (index: number, field: keyof Item, value: string | number) => {
-    const newItems = [...items];
-    (newItems[index] as any)[field] = value;
-    setItems(newItems);
-  };
-
-  const handleAddItem = () => { setItems([...items, { nama_barang: '', jumlah: 1, alasan: '' }]); };
-  const handleRemoveItem = (index: number) => {
-    if (items.length <= 1) return;
-    setItems(items.filter((_, i) => i !== index));
-  };
+  // Helper to increment/decrement
+  const handleIncrement = () => setJumlah(prev => prev + 1);
+  const handleDecrement = () => setJumlah(prev => (prev > 1 ? prev - 1 : 1));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) { toast.error("Sesi berakhir, silakan login kembali."); router.push('/login'); return; }
-    const itemsToInsert = items.map(item => ({ ...item, user_id: user.id }));
-    const { error } = await supabase.from('pengajuan_barang').insert(itemsToInsert);
-    if (error) { toast.error("Gagal Mengajukan", { description: error.message }); } 
-    else {
+    setIsLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Sesi berakhir, silakan login kembali.");
+        router.push('/login');
+        return;
+      }
+
+      if (!namaBarang.trim()) {
+        toast.error("Nama barang wajib diisi");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!alasan.trim()) {
+        toast.error("Alasan pengajuan wajib diisi");
+        setIsLoading(false);
+        return;
+      }
+
+      // Logic stays the same: insert into 'pengajuan_barang'
+      // Even though UI is single item, we follow the table structure
+      const itemToInsert = {
+        user_id: user.id,
+        nama_barang: namaBarang,
+        jumlah: jumlah,
+        alasan: alasan,
+      };
+
+      const { error } = await supabase.from('pengajuan_barang').insert([itemToInsert]);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
       toast.success("Pengajuan Berhasil Dikirim!");
-      setItems([{ nama_barang: '', jumlah: 1, alasan: '' }]);
+      
+      // Reset form
+      setNamaBarang('');
+      setJumlah(1);
+      setAlasan('');
+      
+      // Optional: Redirect to status page or dashboard if desired, 
+      // but keeping it on page allows consecutive submissions as per "Submit Request" flow.
+      router.push('/dashboard'); 
+
+    } catch (error: any) {
+      toast.error("Gagal Mengajukan", { description: error.message });
+    } finally {
+      setIsLoading(false);
     }
   };
-
 
   if (isStatusLoading) {
     return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
@@ -64,18 +92,18 @@ export default function AjukanBarangPage() {
 
   if (!isOpen) {
     return (
-      <div className="min-h-screen bg-secondary/40 p-4 flex items-center justify-center">
-        <Card className="max-w-md w-full text-center p-6">
+      <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+        <Card className="max-w-md w-full text-center p-6 border-none shadow-sm bg-white rounded-3xl">
             <div className="flex justify-center mb-4">
-                <div className="p-3 bg-red-100 rounded-full">
+                <div className="p-3 bg-red-50 rounded-full">
                     <Lock className="w-8 h-8 text-red-500" />
                 </div>
             </div>
-            <h2 className="text-xl font-bold mb-2">Pengajuan Ditutup</h2>
-            <p className="text-muted-foreground mb-6">
+            <h2 className="text-xl font-bold mb-2 text-slate-800">Pengajuan Ditutup</h2>
+            <p className="text-slate-500 mb-6 text-sm">
                 Maaf, sistem pengajuan saat ini sedang ditutup sementara oleh admin. Silakan coba lagi nanti.
             </p>
-            <Button asChild variant="default">
+            <Button asChild className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white">
                 <Link href="/dashboard">Kembali ke Dashboard</Link>
             </Button>
         </Card>
@@ -84,40 +112,82 @@ export default function AjukanBarangPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/40 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-2xl font-bold">Pengajuan Barang</CardTitle>
-                <CardDescription className="mt-1">Tambah satu atau beberapa barang sekaligus.</CardDescription>
-              </div>
-              <Button variant="ghost" asChild><Link href="/dashboard">&larr; Kembali</Link></Button>
+    <div className="min-h-screen bg-white text-slate-800 font-sans">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100/50 px-4 h-16 flex items-center">
+        <Link href="/dashboard" className="p-2 -ml-2 rounded-full hover:bg-gray-50 transition-colors">
+          <ChevronLeft className="w-6 h-6 text-slate-600" />
+        </Link>
+        <h1 className="flex-1 text-center text-lg font-bold text-slate-800 -ml-4">
+          Pengajuan Barang
+        </h1>
+      </div>
+
+      <div className="max-w-xl mx-auto p-6 pb-24 space-y-8">
+        <form onSubmit={handleSubmit}>
+            
+            {/* Nama Barang */}
+            <div className="space-y-3 mb-6">
+                <label className="text-sm font-bold text-slate-800">
+                    Nama Barang
+                </label>
+                <Input 
+                    placeholder="Contoh: Kursi Kantor, Mouse, dll"
+                    value={namaBarang}
+                    onChange={(e) => setNamaBarang(e.target.value)}
+                    className="bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500 focus:ring-0 rounded-2xl h-14 px-4 text-slate-700 placeholder:text-gray-400 transition-all font-medium"
+                />
             </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {items.map((item, index) => (
-                <Card key={index} className="bg-muted/30 p-5 relative">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-lg text-foreground">Item #{index + 1}</h3>
-                    {items.length > 1 && (<Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} className="text-destructive hover:text-destructive"><Trash2Icon className="h-4 w-4" /></Button>)}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2 space-y-2"><label className="text-sm font-medium">Nama Barang</label><Input type="text" value={item.nama_barang} onChange={(e) => handleItemChange(index, 'nama_barang', e.target.value)} required /></div>
-                    <div className="space-y-2"><label className="text-sm font-medium">Jumlah</label><Input type="number" value={item.jumlah} onChange={(e) => handleItemChange(index, 'jumlah', parseInt(e.target.value))} min="1" required /></div>
-                  </div>
-                  <div className="mt-4 space-y-2"><label className="text-sm font-medium">Alasan Pengajuan</label><Textarea value={item.alasan} onChange={(e) => handleItemChange(index, 'alasan', e.target.value)} rows={3} required /></div>
-                </Card>
-              ))}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
-                <Button type="button" variant="outline" onClick={handleAddItem}>Tambah Item Lain</Button>
-                <Button type="submit" className="flex-grow">Kirim Semua Pengajuan</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+
+            {/* Jumlah */}
+            <div className="space-y-3 mb-6">
+                <label className="text-sm font-bold text-slate-800">
+                    Jumlah
+                </label>
+                <div className="flex items-center justify-between bg-gray-50 rounded-2xl h-14 px-2">
+                    <button 
+                        type="button"
+                        onClick={handleDecrement}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-200 text-slate-600 hover:bg-gray-300 transition-colors disabled:opacity-50"
+                        disabled={jumlah <= 1}
+                    >
+                        <Minus className="w-5 h-5" />
+                    </button>
+                    <span className="text-lg font-bold text-slate-800 w-16 text-center">
+                        {jumlah}
+                    </span>
+                    <button 
+                        type="button"
+                        onClick={handleIncrement}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-200 text-slate-600 hover:bg-gray-300 transition-colors"
+                    >
+                        <Plus className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+
+            {/* Alasan Pengajuan */}
+            <div className="space-y-3 mb-6">
+                <label className="text-sm font-bold text-slate-800">
+                    Detail Pengajuan
+                </label>
+                <Textarea 
+                    placeholder="Jelaskan mengapa barang ini dibutuhkan..."
+                    value={alasan}
+                    onChange={(e) => setAlasan(e.target.value)}
+                    className="bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500 focus:ring-0 rounded-2xl min-h-[140px] p-4 text-slate-700 placeholder:text-gray-400 resize-none transition-all font-medium"
+                />
+            </div>
+            {/* Submit Button */}
+            <Button 
+                type="submit" 
+                className="w-full h-14 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg shadow-emerald-200 shadow-lg translate-y-0 active:translate-y-1 transition-all mt-12"
+                disabled={isLoading}
+            >
+                {isLoading ? <LoadingSpinner className="text-white" /> : "Ajukan Barang"}
+            </Button>
+
+        </form>
       </div>
     </div>
   );

@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoaderCircle, Lock } from 'lucide-react';
+import { Card } from "@/components/ui/card";
+import { ChevronLeft, Info, Landmark, Receipt, Upload, Lock } from 'lucide-react';
 import MultiFileUpload from '@/components/reimbursement/MultiFileUpload';
 import { useSubmissionStatus } from '@/hooks/use-submission-status';
 import LoadingSpinner from '@/components/ui/loading-spinner';
@@ -140,6 +140,9 @@ export default function AjukanReimbursementPage() {
             setDisplayValue('');
             setKeperluan('');
             setFiles([]);
+            
+            // Redirect
+            router.push('/dashboard');
 
         } catch (error: any) {
             console.error('Error:', error);
@@ -155,18 +158,18 @@ export default function AjukanReimbursementPage() {
 
     if (!isOpen) {
         return (
-            <div className="min-h-screen bg-secondary/40 p-4 flex items-center justify-center">
-                <Card className="max-w-md w-full text-center p-6">
+            <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+                <Card className="max-w-md w-full text-center p-6 border-none shadow-sm bg-white rounded-3xl">
                     <div className="flex justify-center mb-4">
-                        <div className="p-3 bg-red-100 rounded-full">
+                        <div className="p-3 bg-red-50 rounded-full">
                             <Lock className="w-8 h-8 text-red-500" />
                         </div>
                     </div>
-                    <h2 className="text-xl font-bold mb-2">Pengajuan Ditutup</h2>
-                    <p className="text-muted-foreground mb-6">
+                    <h2 className="text-xl font-bold mb-2 text-slate-800">Pengajuan Ditutup</h2>
+                    <p className="text-slate-500 mb-6 text-sm">
                         Maaf, sistem pengajuan saat ini sedang ditutup sementara oleh admin. Silakan coba lagi nanti.
                     </p>
-                    <Button asChild variant="default">
+                    <Button asChild className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white">
                         <Link href="/dashboard">Kembali ke Dashboard</Link>
                     </Button>
                 </Card>
@@ -175,130 +178,162 @@ export default function AjukanReimbursementPage() {
     }
 
     return (
-        <div className="min-h-screen bg-secondary/40 flex items-center justify-center sm:p-6 lg:p-8">
-          <div className="max-w-4xl mx-auto w-full">
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-2xl font-bold">Pengajuan Reimbursement</CardTitle>
-                      </div>
-                      <Button variant="ghost" asChild>
-                        <Link href="/dashboard">&larr; Kembali</Link>
-                      </Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Bank Info Section */}
-                        <div>
-                            <h3 className="text-lg font-semibold border-b pb-2 mb-4">Informasi Rekening Tujuan</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm font-medium">Nama Bank</label>
-                                    <Select onValueChange={setNamaBank} value={namaBank}>
-                                        <SelectTrigger>
-                                            <SelectValue/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="BCA">BCA</SelectItem>
-                                            <SelectItem value="Mandiri">Mandiri</SelectItem>
-                                            <SelectItem value="BNI">BNI</SelectItem>
-                                            <SelectItem value="BRI">BRI</SelectItem>
-                                            <SelectItem value="Lainnya">Lainnya</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                {namaBank === 'Lainnya' && (
-                                    <div>
-                                        <label className="text-sm font-medium">Ketik Nama Bank</label>
-                                        <Input 
-                                            value={bankLainnya} 
-                                            onChange={(e) => setBankLainnya(e.target.value)} 
-                                            placeholder="Contoh: Bank Jago" 
-                                            required 
-                                        />
-                                    </div>
-                                )}
-                                <div>
-                                    <label className="text-sm font-medium">Nomor Rekening</label>
-                                    <Input 
-                                        value={nomorRekening} 
-                                        onChange={(e) => setNomorRekening(e.target.value)} 
-                                        placeholder="Masukkan nomor rekening"
-                                        required 
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium">Atas Nama</label>
-                                    <Input 
-                                        value={atasNama} 
-                                        onChange={(e) => setAtasNama(e.target.value)} 
-                                        placeholder="Nama pemilik rekening"
-                                        required 
-                                    />
-                                </div>
-                            </div>
-                        </div>
+        <div className="min-h-screen bg-white text-slate-800 font-sans">
+            {/* Header */}
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-100/50 px-4 h-16 flex items-center">
+                <Link href="/dashboard" className="p-2 -ml-2 rounded-full hover:bg-gray-50 transition-colors">
+                    <ChevronLeft className="w-6 h-6 text-slate-600" />
+                </Link>
+                <h1 className="flex-1 text-center text-base font-bold text-slate-800 -ml-4">
+                    Pengajuan Reimbursement
+                </h1>
+            </div>
 
-                        {/* Reimbursement Details */}
-                        <div>
-                            <h3 className="text-lg font-semibold border-b pb-2 mb-4">Detail Reimbursement</h3>
-                            <div className="space-y-4">
-                                <div>
-                                  <label className="text-sm font-medium">Nominal yang terpakai (Rp)</label>
-                                  <Input 
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={displayValue} 
-                                    onChange={handleJumlahUangChange}
-                                    placeholder="Masukan jumlah uang"
+            <div className="max-w-xl mx-auto p-6 pb-40 space-y-6">
+                <form onSubmit={handleSubmit}>
+                    
+                    {/* SECTION 1: BANK ACCOUNT INFORMATION */}
+                    <div className="mb-6">
+                        <h3 className="flex items-center gap-2 text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-3">
+                            <Landmark className="w-3.5 h-3.5 text-emerald-500" />
+                            Informasi Rekening Bank
+                        </h3>
+                        <div className="p-5 bg-white rounded-3xl border border-gray-100 shadow-sm space-y-5">
+                            
+                            {/* Nama Bank */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600">Nama Bank</label>
+                                <Select onValueChange={setNamaBank} value={namaBank}>
+                                    <SelectTrigger className="bg-white border border-gray-200 focus:border-emerald-500 rounded-xl h-10 text-xs">
+                                        <SelectValue placeholder="Select Bank" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="BCA" className="text-xs">BCA</SelectItem>
+                                        <SelectItem value="Mandiri" className="text-xs">Mandiri</SelectItem>
+                                        <SelectItem value="BNI" className="text-xs">BNI</SelectItem>
+                                        <SelectItem value="BRI" className="text-xs">BRI</SelectItem>
+                                        <SelectItem value="Lainnya" className="text-xs">Lainnya</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Bank Lainnya */}
+                            {namaBank === 'Lainnya' && (
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-600">Nama Bank Lainnya</label>
+                                    <Input 
+                                        value={bankLainnya} 
+                                        onChange={(e) => setBankLainnya(e.target.value)} 
+                                        placeholder="Contoh: Bank Jago" 
+                                        className="bg-white border border-gray-200 focus:border-emerald-500 rounded-xl h-10 text-xs"
+                                        required 
+                                    />
+                                </div>
+                            )}
+
+                            {/* Nomor Rekening */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600">Nomor Rekening</label>
+                                <Input 
+                                    value={nomorRekening} 
+                                    onChange={(e) => setNomorRekening(e.target.value)} 
+                                    placeholder="Contoh: 1234567890"
+                                    className="bg-white border border-gray-200 focus:border-emerald-500 rounded-xl h-10 placeholder:text-gray-400 text-xs"
                                     required 
-                                  />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium">Keperluan / Deskripsi</label>
-                                    <Textarea 
-                                        value={keperluan} 
-                                        onChange={(e) => setKeperluan(e.target.value)} 
-                                        placeholder="Jelaskan untuk apa uang tersebut digunakan"
-                                        rows={4}
+                                />
+                            </div>
+
+                            {/* Nama Pemilik */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600">Nama Pemilik Rekening</label>
+                                <Input 
+                                    value={atasNama} 
+                                    onChange={(e) => setAtasNama(e.target.value)} 
+                                    placeholder="Contoh: Muhamad Gufron"
+                                    className="bg-white border border-gray-200 focus:border-emerald-500 rounded-xl h-10 placeholder:text-gray-400 text-xs"
+                                    required 
+                                />
+                            </div>
+
+                            <div className="flex gap-2 items-start p-2.5 bg-gray-50 rounded-lg">
+                                <Info className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
+                                <p className="text-[10px] text-gray-500 leading-relaxed">
+                                    Pastikan nomor rekening dan nama pemilik rekening sesuai dengan yang terdaftar di bank.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SECTION 2: REIMBURSEMENT DETAILS */}
+                    <div className="mb-6">
+                        <h3 className="flex items-center gap-2 text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-3">
+                            <Receipt className="w-3.5 h-3.5 text-emerald-500" />
+                            Detail Pengajuan
+                        </h3>
+                        <div className="p-5 bg-white rounded-3xl border border-gray-100 shadow-sm space-y-5">
+                            
+                            {/* Amount */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600">Jumlah Uang</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">Rp</span>
+                                    <Input 
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={displayValue} 
+                                        onChange={handleJumlahUangChange}
+                                        placeholder="0"
+                                        className="bg-white border border-gray-200 focus:border-emerald-500 rounded-xl h-10 pl-10 text-sm font-bold text-slate-800"
                                         required 
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Proof Upload */}
-                        <div>
-                            <h3 className="text-lg font-semibold border-b pb-2 mb-4">
-                                Bukti Pembelian / Struk <span className="text-red-500">*</span>
-                            </h3>
-                            <MultiFileUpload 
-                                onFilesChange={setFiles}
-                                maxFiles={5}
-                                maxSizeMB={5}
-                            />
-                            <p className="text-xs text-gray-500 mt-2">
-                                Upload foto struk, nota, atau bukti pembayaran lainnya (minimal 1 file)
-                            </p>
+                            {/* Description */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600">Keperluan</label>
+                                <Textarea 
+                                    value={keperluan} 
+                                    onChange={(e) => setKeperluan(e.target.value)} 
+                                    placeholder="Jelaskan keperluan pengajuan reimbursement..."
+                                    className="bg-white border border-gray-200 focus:border-emerald-500 rounded-xl min-h-[100px] p-3 placeholder:text-gray-400 resize-none text-xs"
+                                    required 
+                                />
+                            </div>
                         </div>
+                    </div>
 
-                        {/* Submit Button */}
-                        <Button 
-                          type="submit" 
-                          className="w-full !mt-8" 
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <LoaderCircle className="w-6 h-6 animate-spin" />
-                          ) : (
-                            "Kirim Pengajuan Reimbursement"
-                          )}
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
+                    {/* SECTION 3: UPLOAD RECEIPT */}
+                    <div className="mb-6">
+                         <h3 className="flex items-center gap-2 text-[10px] font-bold text-slate-800 uppercase tracking-wider mb-3">
+                            <Upload className="w-3.5 h-3.5 text-emerald-500" />
+                            Unggah Bukti Pengeluaran
+                        </h3>
+                        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                             <div className="p-5">
+                                <MultiFileUpload 
+                                    onFilesChange={setFiles}
+                                    maxFiles={5}
+                                    maxSizeMB={5}
+                                />
+                                <p className="text-[10px] text-center text-gray-400 mt-2">
+                                    Support PDF, JPG, PNG (Max 5MB)
+                                </p>
+                             </div>
+                        </div>
+                    </div>
+
+                    {/* Fixed Bottom Button */}
+                        <div className="max-w-xl mx-auto">
+                            <Button 
+                                type="submit" 
+                                className="w-full h-12 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm shadow-emerald-200 shadow-lg translate-y-0 active:translate-y-1 transition-all"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? <LoadingSpinner className="text-white" /> : "Ajukan Reimbursement"}
+                            </Button>
+                        </div>
+                </form>
             </div>
         </div>
     );
