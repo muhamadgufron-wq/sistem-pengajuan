@@ -156,6 +156,15 @@ export default function DashboardPage() {
     const formattedDate = currentTime.toLocaleDateString('id-ID', dateOptions);
     const formattedTime = currentTime.toLocaleTimeString('id-ID', timeOptions);
 
+    // Greeting Logic
+    const getGreeting = () => {
+        const hour = currentTime.getHours();
+        if (hour >= 4 && hour < 10) return "Selamat Pagi";
+        if (hour >= 10 && hour < 15) return "Selamat Siang";
+        if (hour >= 15 && hour < 18) return "Selamat Sore";
+        return "Selamat Malam";
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 pb-20"> {/* pb-20 for bottom nav */}
             
@@ -167,7 +176,7 @@ export default function DashboardPage() {
                         <AvatarFallback>U</AvatarFallback>
                     </Avatar>
                     <div>
-                        <h1 className="text-lg font-bold text-slate-800 leading-tight">Selamat Pagi, {fullName?.split(' ')[0] || 'User'}</h1>
+                        <h1 className="text-md font-bold text-slate-800 leading-tight">{getGreeting()}, {fullName?.split(' ')[0] || 'User'}</h1>
                         <p className="text-xs text-slate-500 font-medium">Semangat Kerja nya ya!</p>
                     </div>
                 </div>

@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button';
 import { CheckInDialog } from '@/components/absensi/CheckInDialog';
 import { CheckOutDialog } from '@/components/absensi/CheckOutDialog';
 import { toast } from 'sonner';
-import { Calendar, Clock, LogIn, LogOut, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, LogIn, LogOut, TrendingUp, AlertTriangle, ChevronLeft, MapPin } from 'lucide-react';
 import { formatDate, formatTime } from '@/lib/utils/camera';
 import { isWednesday } from '@/lib/utils/attendance-utils';
-import { format } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
+import Link from 'next/link';
 
 const getTodayDate = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
@@ -191,28 +192,37 @@ export default function AbsensiPage() {
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; className: string }> = {
-      hadir: { label: 'Hadir', className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-      izin: { label: 'Izin', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-      sakit: { label: 'Sakit', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-      alpha: { label: 'Alpha', className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
-      cuti: { label: 'Cuti', className: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
+      hadir: { label: 'Hadir', className: 'bg-green-100 text-green-700' },
+      izin: { label: 'Izin', className: 'bg-blue-100 text-blue-700' },
+      sakit: { label: 'Sakit', className: 'bg-yellow-100 text-yellow-700' },
+      alpha: { label: 'Alpha', className: 'bg-red-100 text-red-700' },
+      cuti: { label: 'Cuti', className: 'bg-purple-100 text-purple-700' },
     };
 
     const statusInfo = statusMap[status] || statusMap.hadir;
 
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusInfo.className}`}>
-        {statusInfo.label}
+      <span className={`px-3 py-1 text-xs font-bold rounded-full ${statusInfo.className}`}>
+        {statusInfo.label.toUpperCase()}
       </span>
     );
   };
 
+  // Helper to calculate duration
+  const calculateDuration = (start: string | null, end: string | null) => {
+    if (!start || !end) return "-- : --";
+    const diff = differenceInMinutes(new Date(end), new Date(start));
+    const hours = Math.floor(diff / 60);
+    const minutes = diff % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Memuat data absensi...</p>
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+             <p className="text-gray-500">Memuat data absensi...</p>
         </div>
       </div>
     );
@@ -222,264 +232,197 @@ export default function AbsensiPage() {
   const hasCheckedOut = todayAttendance?.check_out_time;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-center mt-2">Absensi</h1>
-        <p className="text-muted-foreground text-center mt-2">
-          {formatDate(currentTime)}
-        </p>
+    <div className="min-h-screen bg-gray-50 pb-10">
+      {/* 1. Header Minimalis */}
+      <div className="px-6 py-6 flex items-center">
+        <Link href="/dashboard" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
+            <ChevronLeft className="w-6 h-6 text-slate-800" />
+        </Link>
       </div>
 
-      {/* Wednesday Holiday Banner */}
-      {isWednesday(currentTime) && (
-        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">⚠️</span>
-              <div className="flex-1">
-                <h3 className="font-semibold text-orange-700 dark:text-orange-300 mb-1">
-                  Hari Libur (Rabu)
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Anda tidak wajib masuk hari ini. Jika Anda melakukan masuk, akan dihitung sebagai{' '}
-                  <span className="font-semibold text-orange-600">lembur</span>.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* 2. Hero Section: Clock & Status */}
+      <div className="text-center px-6 mb-8">
+        <h1 className="text-4xl font-bold text-slate-800 tracking-tight font-mono mb-1">
+            {formatTime(currentTime)}
+        </h1>
+        <p className="text-slate-500 font-medium text-sm mb-6">
+            {format(currentTime, 'EEEE, d MMMM yyyy', { locale: id })}
+        </p>
 
-      {/* Incomplete Attendance Warning */}
-      {incompleteAttendance && (
-        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-full">
-                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-red-700 dark:text-red-300 mb-2">
-                  Absen Pulang Belum Selesai!
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Anda belum melakukan absen pulang untuk tanggal{' '}
-                  <span className="font-bold text-red-600 dark:text-red-400">
-                    {format(new Date(incompleteAttendance.tanggal), 'EEEE, d MMMM yyyy', { locale: id })}
-                  </span>
-                  . Silakan lengkapi absen pulang terlebih dahulu sebelum melakukan absen hari ini.
-                </p>
-                <Button 
-                  onClick={() => setShowCheckOutDialog(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Input Jam Pulang
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Status Pill */}
+        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide
+            ${hasCheckedOut ? 'bg-gray-100 text-gray-500' : hasCheckedIn ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-500'}
+        `}>
+             <span className={`w-2 h-2 rounded-full ${hasCheckedOut ? 'bg-gray-400' : hasCheckedIn ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+             {hasCheckedOut ? 'Sudah Pulang' : hasCheckedIn ? 'Sudah Masuk' : 'Belum Masuk'}
+        </div>
+      </div>
 
-
-      {/* Today's Attendance Card - Only Show if NO Incomplete Attendance */}
-      {!incompleteAttendance && (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Absensi Hari Ini
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Current Time */}
-          <div className="text-center py-6 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">Waktu Sekarang</p>
-            <p className="text-4xl font-bold">{formatTime(currentTime)}</p>
-          </div>
-
-          {/* Check-in/out Status */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <LogIn className="h-4 w-4" />
-                Masuk
-              </div>
-              {hasCheckedIn ? (
-                <>
-                  <p className="text-2xl font-bold text-green-600">
-                    {formatTime(new Date(todayAttendance.check_in_time!))}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {todayAttendance.check_in_keterangan}
-                  </p>
-                </>
-              ) : (
-                <p className="text-lg text-muted-foreground">Belum masuk</p>
-              )}
-            </div>
-
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <LogOut className="h-4 w-4" />
-                Pulang
-              </div>
-              {hasCheckedOut ? (
-                <p className="text-2xl font-bold text-blue-600">
-                  {formatTime(new Date(todayAttendance.check_out_time!))}
-                </p>
-              ) : (
-                <p className="text-lg text-muted-foreground">Belum pulang</p>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            {approvedLeave ? (
-              // Show leave information if user has approved leave
-              <div className="flex-1 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
-                    {approvedLeave.jenis === 'izin' && <span className="text-2xl">📋</span>}
-                    {approvedLeave.jenis === 'sakit' && <span className="text-2xl">🤒</span>}
-                    {approvedLeave.jenis === 'cuti' && <span className="text-2xl">🏖️</span>}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                        approvedLeave.jenis === 'izin' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                        approvedLeave.jenis === 'sakit' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                        'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                      }`}>
-                        {approvedLeave.jenis.charAt(0).toUpperCase() + approvedLeave.jenis.slice(1)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(approvedLeave.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                        {approvedLeave.jumlah_hari > 1 && 
-                          ` - ${new Date(approvedLeave.tanggal_selesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`
-                        }
-                        {' '}({approvedLeave.jumlah_hari} hari)
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
-                      Anda sedang {approvedLeave.jenis}
+      {/* 3. Work Summary Card (Mobile Style) */}
+      <div className="px-6 mb-8">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+             <div className="flex justify-between divide-x divide-gray-100">
+                <div className="text-center px-2 flex-1">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Masuk</p>
+                    <p className="text-lg font-bold text-slate-800">
+                       {hasCheckedIn ? formatTime(new Date(todayAttendance!.check_in_time!)).slice(0, 5) : "--:--"}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {approvedLeave.alasan}
-                    </p>
-                  </div>
                 </div>
-              </div>
-            ) : !hasCheckedIn ? (
-              <Button
-                onClick={() => setShowCheckInDialog(true)}
-                className="flex-1 bg-green-500 hover:bg-green-600"
-                size="lg"
-              >
-                <LogIn className="mr-2 h-5 w-5" />
-                Masuk
-              </Button>
-            ) : !hasCheckedOut ? (
-              <Button
-                onClick={() => setShowCheckOutDialog(true)}
-                className="flex-1 bg-red-500 hover:bg-red-600"
-                size="lg"
-              >
-                <LogOut className="mr-2 h-5 w-5" />
-                Pulang
-              </Button>
-            ) : (
-              <div className="flex-1 text-center py-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="text-green-700 dark:text-green-300 font-medium">
-                  ✅ Absensi hari ini sudah lengkap
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      )}  {/* Monthly Statistics */}
-      {stats && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Statistik Bulan Ini
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="text-3xl font-bold text-green-600">{stats.total_hadir}</p>
-                <p className="text-sm text-muted-foreground mt-1">Hadir</p>
-              </div>
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-3xl font-bold text-blue-600">{stats.total_izin}</p>
-                <p className="text-sm text-muted-foreground mt-1">Izin</p>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <p className="text-3xl font-bold text-yellow-600">{stats.total_sakit}</p>
-                <p className="text-sm text-muted-foreground mt-1">Sakit</p>
-              </div>
-              <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <p className="text-3xl font-bold text-red-600">{stats.total_alpha}</p>
-                <p className="text-sm text-muted-foreground mt-1">Alpha</p>
-              </div>
-              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <p className="text-3xl font-bold text-purple-600">{stats.total_cuti}</p>
-                <p className="text-sm text-muted-foreground mt-1">Cuti</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Riwayat 7 Hari Terakhir
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {history.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              Belum ada riwayat absensi
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {history.map((item) => (
-                <div
-                  key={item.tanggal}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {new Date(item.tanggal).toLocaleDateString('id-ID', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                      })}
+                <div className="text-center px-2 flex-1">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Pulang</p>
+                    <p className="text-lg font-bold text-slate-800">
+                       {hasCheckedOut ? formatTime(new Date(todayAttendance!.check_out_time!)).slice(0, 5) : "--:--"}
                     </p>
-                    {item.check_in_time && (
-                      <p className="text-sm text-muted-foreground">
-                        {formatTime(new Date(item.check_in_time))}
-                        {item.check_out_time && ` - ${formatTime(new Date(item.check_out_time))}`}
-                        {item.check_in_keterangan && ` • ${item.check_in_keterangan}`}
-                      </p>
-                    )}
-                  </div>
-                  {getStatusBadge(item.status)}
                 </div>
-              ))}
-            </div>
+                <div className="text-center px-2 flex-1">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Total Jam</p>
+                    <p className="text-lg font-bold text-emerald-600">
+                       {calculateDuration(todayAttendance?.check_in_time || null, todayAttendance?.check_out_time || null)}
+                    </p>
+                </div>
+             </div>
+
+             {todayAttendance?.check_in_keterangan && (
+                <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Keterangan</p>
+                    <p className="text-sm font-medium text-slate-700 italic">" {todayAttendance.check_in_keterangan} "</p>
+                </div>
+             )}
+          </div>
+      </div>
+
+      {/* 4. Big Circular Action Button */}
+      <div className="flex justify-center mb-10 relative">
+          {/* Background Decor Circles */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border border-gray-100 rounded-full animate-[pulse_3s_ease-in-out_infinite]"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 border border-blue-50/50 rounded-full"></div>
+
+          {/* Warning for Wednesday/Incomplete */}
+          {isWednesday(currentTime) && (
+             <div className="absolute -top-12 z-20 bg-orange-100 text-orange-700 px-4 py-1 rounded-full text-xs font-bold border border-orange-200">
+                 ⚠️ Hari Libur
+             </div>
           )}
-        </CardContent>
-      </Card>
+          {incompleteAttendance && (
+               <div className="absolute -top-12 z-20 bg-red-100 text-red-700 px-4 py-1 rounded-full text-xs font-bold border border-red-200 animate-bounce">
+                  ⚠️ Selesaikan Absen Kemarin
+               </div>
+          )}
+
+          {/* Button Logic */}
+          <button
+            onClick={() => {
+                if (incompleteAttendance) {
+                   setShowCheckOutDialog(true);
+                } else if (!hasCheckedIn) {
+                   setShowCheckInDialog(true);
+                } else if (!hasCheckedOut) {
+                   setShowCheckOutDialog(true);
+                }
+            }}
+            disabled={!!(hasCheckedIn && hasCheckedOut)}
+            className={`
+                relative w-48 h-48 rounded-full shadow-2xl flex flex-col items-center justify-center transition-all duration-300 transform active:scale-95
+                ${incompleteAttendance ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-200' :
+                  !hasCheckedIn ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-emerald-200' : 
+                  !hasCheckedOut ? 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-blue-200' : 
+                  'bg-gray-100 text-gray-300 shadow-none cursor-not-allowed'}
+            `}
+          >
+             {hasCheckedOut ? (
+                 <>
+                    <Calendar className="w-12 h-12 mb-2 text-gray-300" />
+                    <span className="text-sm font-bold tracking-widest text-gray-400">SELESAI</span>
+                 </>
+             ) : (
+                <>
+                {incompleteAttendance ? <LogOut className="w-12 h-12 text-white mb-2" /> :
+                  !hasCheckedIn ? <LogIn className="w-12 h-12 text-white mb-2" /> :
+                    <LogOut className="w-12 h-12 text-white mb-2" />}
+                <span className="text-md font-bold tracking-widest text-white uppercase">
+                  {incompleteAttendance ? 'PULANG (KEMARIN)' : !hasCheckedIn ? 'MASUK' : 'PULANG'}
+                </span>
+                <span className="text-[10px] text-white/80 mt-1 font-medium">Klik untuk absen</span>
+              </>
+            )}
+          </button>
+      </div>
+      {/* Monthly Statistics - Compact */}
+      {stats && (
+        <div className="px-6 mb-6">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 px-1">Statistik Bulan Ini</h3>
+            <div className="grid grid-cols-5 gap-2">
+              <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100/50">
+                <p className="text-xl font-bold text-green-600">{stats.total_hadir}</p>
+                <p className="text-[10px] font-medium text-green-600/80 mt-0.5">Hadir</p>
+              </div>
+              <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100/50">
+                <p className="text-xl font-bold text-blue-600">{stats.total_izin}</p>
+                <p className="text-[10px] font-medium text-blue-600/80 mt-0.5">Izin</p>
+              </div>
+              <div className="text-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-100/50">
+                <p className="text-xl font-bold text-yellow-600">{stats.total_sakit}</p>
+                <p className="text-[10px] font-medium text-yellow-600/80 mt-0.5">Sakit</p>
+              </div>
+              <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100/50">
+                <p className="text-xl font-bold text-red-600">{stats.total_alpha}</p>
+                <p className="text-[10px] font-medium text-red-600/80 mt-0.5">Alpha</p>
+              </div>
+              <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100/50">
+                <p className="text-xl font-bold text-purple-600">{stats.total_cuti}</p>
+                <p className="text-[10px] font-medium text-purple-600/80 mt-0.5">Cuti</p>
+              </div>
+            </div>
+        </div>
+      )}
+
+      {/* Recent History - Compact */}
+      <div className="px-6 pb-8">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="text-sm font-bold text-slate-800">Riwayat Terakhir</h3>
+          </div>
+          
+          <div className="space-y-3">
+          {history.length === 0 ? (
+            <div className="text-center py-8 border-2 border-dashed border-gray-100 rounded-xl">
+              <p className="text-xs text-gray-400">Belum ada riwayat absensi</p>
+            </div>
+          ) : (
+             history.map((item, idx) => (
+                <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-2">
+                    <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-slate-50 flex flex-col items-center justify-center border border-slate-100">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase leading-none mb-0.5">
+                                    {format(new Date(item.tanggal), 'MMM')}
+                                </span>
+                                <span className="text-sm font-bold text-slate-700 leading-none">
+                                    {format(new Date(item.tanggal), 'dd')}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-slate-800">
+                                    {format(new Date(item.tanggal), 'EEEE', { locale: id })}
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                                    {item.check_in_time ? formatTime(new Date(item.check_in_time)) : '-'} - {item.check_out_time ? formatTime(new Date(item.check_out_time)) : '-'}
+                                </p>
+                            </div>
+                        </div>
+                        {getStatusBadge(item.status)}
+                    </div>
+                    {item.check_in_keterangan && (
+                        <div className="pl-[52px]">
+                            <p className="text-[10px] text-slate-500 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                "{item.check_in_keterangan}"
+                            </p>
+                        </div>
+                    )}
+                </div>
+             ))
+          )}
+          </div>
+      </div>
 
       {/* Dialogs */}
       <CheckInDialog
