@@ -6,42 +6,72 @@ import Link from 'next/link';
 import { createClient } from '@/app/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { BookCheck, UploadCloud, Calendar, FileCheck, Lock } from 'lucide-react';
+import { 
+    FileCheck, 
+    Lock, 
+    Bell, 
+    MapPin, 
+    ArrowRight,
+    LayoutGrid,
+    FileText,
+    BarChart3,
+    User,
+    Home,
+    History,
+    CreditCard,
+    ShoppingBag,
+    Upload
+} from 'lucide-react';
 import { useSubmissionStatus } from '@/hooks/use-submission-status';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// Komponen Card (seperti sebelumnya)
-const DashboardCard = ({ href, icon, title, description, isAdminCard = false, disabled = false }: {
+// --- Components ---
+
+const MenuItem = ({ href, icon, title, disabled = false, badge }: {
     href: string;
     icon: React.ReactNode;
     title: string;
-    description: string;
-    isAdminCard?: boolean;
     disabled?: boolean;
+    badge?: string;
 }) => {
     if (disabled) {
         return (
-            <div className="group block p-6 bg-gray-100 border rounded-xl shadow-sm opacity-75 cursor-not-allowed">
-                <div className="flex items-center">
-                    <div className="grayscale opacity-50">{icon}</div>
-                    <h2 className="ml-4 text-xl font-bold text-gray-500">{title}</h2>
-                    <Lock className="ml-auto w-4 h-4 text-gray-400" />
+            <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-3xl border border-gray-100 opacity-60 relative overflow-hidden">
+                 <div className="absolute top-2 right-2">
+                    <Lock className="w-4 h-4 text-gray-400" />
+                 </div>
+                <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center mb-3 text-gray-400">
+                    {icon}
                 </div>
-                <p className="mt-4 text-sm text-gray-500">{description}</p>
-                <p className="text-xs text-red-500 mt-2 font-medium">Pengajuan ditutup sementara</p>
+                <span className="text-sm font-medium text-gray-500 text-center leading-tight">{title}</span>
+                <span className="text-[10px] text-red-400 mt-1 font-medium">Ditutup</span>
             </div>
         );
     }
 
     return (
-        <Link href={href} className={`group block p-6 bg-card border rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transform transition-all duration-300 ${isAdminCard ? 'border-destructive/50 hover:border-destructive' : 'hover:border-primary'}`}>
-            <div className="flex items-center">
+        <Link href={href} className="group flex flex-col items-center justify-center p-4 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+            {badge && (
+                <span className="absolute top-3 right-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {badge}
+                </span>
+            )}
+            <div className="w-14 h-14 rounded-full bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center mb-3 text-blue-600 transition-colors">
                 {icon}
-                <h2 className="ml-4 text-xl font-bold text-card-foreground">{title}</h2>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">{description}</p>
+            <span className="text-sm font-bold text-gray-700 text-center leading-tight group-hover:text-blue-700">{title}</span>
         </Link>
     );
 };
+
+const BottomNavItem = ({ icon, label, active = false, href = '#' }: { icon: React.ReactNode, label: string, active?: boolean, href?: string }) => {
+    return (
+        <Link href={href} className={`flex flex-col items-center justify-center w-full py-2 ${active ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>
+            {icon}
+            <span className="text-[10px] font-medium mt-1">{label}</span>
+        </Link>
+    );
+}
 
 export default function DashboardPage() {
     const supabase = createClient();
@@ -49,9 +79,22 @@ export default function DashboardPage() {
     const [user, setUser] = useState<any>(null);
     const [userRole, setUserRole] = useState('');
     const [fullName, setFullName] = useState('');
+    const [currentTime, setCurrentTime] = useState<Date>(new Date());
+    const [attendanceStatus, setAttendanceStatus] = useState<'not_checked_in' | 'checked_in' | 'checked_out'>('not_checked_in');
     const [isRedirecting, setIsRedirecting] = useState(false);
     
-    const { isOpen: isSubmissionOpen, isLoading: isStatusLoading } = useSubmissionStatus();
+    // Gunakan static date agar tidak hydration mismatch time, tapi update di client
+    const [mounted, setMounted] = useState(false);
+
+    const { isOpen: isSubmissionOpen } = useSubmissionStatus();
+
+    const getTodayDate = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+
+    useEffect(() => {
+        setMounted(true);
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60); // update every minute
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         const checkUserAndRole = async () => {
@@ -70,10 +113,25 @@ export default function DashboardPage() {
                     setUserRole(profile.role);
                     setFullName(profile.full_name);
                     
-                    // Cek role setelah mendapatkan data profil
                     if (profile.role === 'admin' || profile.role === 'superadmin') {
                         setIsRedirecting(true);
-                        router.replace('/admin');
+                        router.replace('/admin'); // Assuming admin dashboard is at /admin based on previous code
+                    }
+                }
+
+                 // Check attendance status
+                 const { data: todayData } = await supabase
+                 .from('absensi')
+                 .select('*')
+                 .eq('user_id', user.id)
+                 .eq('tanggal', getTodayDate())
+                 .single();
+
+                if (todayData) {
+                    if (todayData.check_out_time) {
+                        setAttendanceStatus('checked_out');
+                    } else if (todayData.check_in_time) {
+                        setAttendanceStatus('checked_in');
                     }
                 }
             }
@@ -87,88 +145,147 @@ export default function DashboardPage() {
         router.push('/login');
     };
 
-    if (!user || !userRole) {
-        return <div className="min-h-screen flex items-center justify-center bg-secondary/40">Memuat...</div>;
+    if (!user || isRedirecting || !mounted) {
+        return <div className="min-h-screen flex items-center justify-center bg-gray-50">Memuat...</div>;
     }
 
-    // Tampilkan loading saat redirect dipicu
-    if (isRedirecting) {
-        return <div className="min-h-screen flex items-center justify-center bg-secondary/40">Mengarahkan ke halaman admin...</div>;
-    }
-
-    // Jika role adalah admin/superadmin, tampilkan pesan bahwa redirect sedang berlangsung
-    if (userRole === 'admin' || userRole === 'superadmin') {
-        return <div className="min-h-screen flex items-center justify-center bg-secondary/40">Anda tidak memiliki akses ke halaman ini.</div>;
-    }
+    // Format Date: Monday, 24 May 2024
+    const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const timeOptions: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+    
+    const formattedDate = currentTime.toLocaleDateString('id-ID', dateOptions);
+    const formattedTime = currentTime.toLocaleTimeString('id-ID', timeOptions);
 
     return (
-        <div className="min-h-screen bg-secondary/40">
-            <header className="bg-card shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="min-h-screen bg-gray-50 pb-20"> {/* pb-20 for bottom nav */}
+            
+            {/* --- Header --- */}
+            <div className="bg-white sticky top-0 z-10 px-6 py-4 flex justify-between items-center shadow-sm">
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border-2 border-slate-100">
+                        <AvatarImage src={`https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || user.email)}&background=0D8ABC&color=fff`} />
+                        <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
                     <div>
-                        <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
-                        <p className="text-sm text-muted-foreground">Selamat datang, {fullName || user.email}</p>
+                        <h1 className="text-lg font-bold text-slate-800 leading-tight">Selamat Pagi, {fullName?.split(' ')[0] || 'User'}</h1>
+                        <p className="text-xs text-slate-500 font-medium">Semangat Kerja nya ya!</p>
                     </div>
-                    <Button onClick={handleLogout} variant="destructive">
-                        Logout
-                    </Button>
                 </div>
-            </header>
+                <Button variant="ghost" size="icon" className="rounded-full bg-slate-50 relative">
+                    <Bell className="w-5 h-5 text-slate-600" />
+                    <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                </Button>
+            </div>
 
-            <main className="max-w-7xl mx-auto px-6 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {/* Absensi - Prioritas Utama - Selalu Buka */}
-                    <DashboardCard 
-                        href="/my-absensi"
-                        title="Absensi"
-                        description="Masuk dan pulang kehadiran harian Anda."
-                        icon={<Calendar className="w-8 h-8 text-orange-500" />}
+            {/* --- Hero & Attendance Section --- */}
+            <div className="px-5 pt-6 pb-2">
+                <div className="relative rounded-3xl overflow-hidden shadow-lg h-48 group">
+                    {/* Background Image with Gradient Overlay */}
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                        style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1497215728101-856f4ea42174?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")' }} 
                     />
-                    <DashboardCard 
-                        href="/ajukan-izin"
-                        title="Ajukan Izin"
-                        description="Ajukan izin, sakit, atau cuti untuk kehadiran Anda."
-                        icon={<FileCheck className="w-8 h-8 text-indigo-500" />}
-                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70"></div>
                     
-                    {/* Pengajuan - Tergantung Status */}
-                    <DashboardCard 
+                    <div className="absolute bottom-4 left-5 text-white flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-emerald-400" />
+                        <span className="text-sm font-medium">Headquarters, Jakarta</span>
+                    </div>
+                </div>
+
+                {/* Overlapping Card */}
+                <div className="relative -mt-12 mx-2 p-5 bg-white rounded-2xl shadow-xl border border-gray-100">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 className="text-xs font-bold text-emerald-500 tracking-wider mb-1">STATUS KEHADIRAN</h3>
+                            <div className="text-gray-400 text-xs font-medium flex gap-2">
+                                <span>{formattedDate}</span>
+                                <span>•</span>
+                                <span>{formattedTime}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-end">
+                        <div>
+                             <p className="text-xs text-gray-500 mb-1">Status Saat Ini</p>
+                             <h2 className={`text-lg font-bold ${
+                                attendanceStatus === 'checked_out' ? 'text-green-600' :
+                                attendanceStatus === 'checked_in' ? 'text-green-600' :
+                                'text-slate-800'
+                             }`}>
+                                {attendanceStatus === 'not_checked_in' && 'Siap Masuk'}
+                                {attendanceStatus === 'checked_in' && 'Sudah Masuk'}
+                                {attendanceStatus === 'checked_out' && 'Sudah Pulang'}
+                             </h2>
+                        </div>
+                        <Link href="/my-absensi">
+                            <Button className={`
+                                rounded-xl px-6 h-11 shadow-lg transition-all active:scale-95
+                                ${attendanceStatus === 'not_checked_in' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200 text-white' : ''}
+                                ${attendanceStatus === 'checked_in' ? 'bg-green-500 hover:bg-green-600 shadow-green-200 text-white' : ''}
+                                ${attendanceStatus === 'checked_out' ? 'bg-gray-100 text-gray-400 shadow-none cursor-not-allowed' : ''}
+                            `} disabled={attendanceStatus === 'checked_out'}>
+                                {attendanceStatus === 'not_checked_in' && <><ArrowRight className="w-4 h-4 mr-2" /> Masuk</>}
+                                {attendanceStatus === 'checked_in' && <><ArrowRight className="w-4 h-4 mr-2" /> Pulang</>}
+                                {attendanceStatus === 'checked_out' && 'Selesai'}
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            {/* --- Main Features Grid --- */}
+            <div className="px-6 py-6">
+                <h2 className="text-lg font-bold text-slate-800 mb-5">Menu Utama</h2>
+                <div className="grid grid-cols-2 gap-4">
+                    <MenuItem 
                         href="/ajukan-barang"
                         title="Ajukan Barang"
-                        description="Buat permintaan pengadaan untuk barang atau aset baru."
-                        icon={<svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>}
+                        icon={<ShoppingBag className="w-6 h-6" />}
                         disabled={!isSubmissionOpen}
                     />
-                    <DashboardCard 
+                    <MenuItem 
                         href="/ajukan-uang"
                         title="Ajukan Uang"
-                        description="Buat permintaan untuk pencairan dana keperluan operasional."
-                        icon={<svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
+                        icon={<CreditCard className="w-6 h-6" />}
                         disabled={!isSubmissionOpen}
                     />
-                    <DashboardCard 
+                    <MenuItem 
                         href="/ajukan-reimbursement"
-                        title="Ajukan Reimbursement"
-                        description="Ajukan penggantian biaya yang sudah Anda keluarkan dengan bukti."
-                        icon={<svg className="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" /></svg>}
+                        title="Reimbursement"
+                        icon={<FileText className="w-6 h-6" />}
                         disabled={!isSubmissionOpen}
                     />
-                    
-                    {/* Riwayat & Laporan */}
-                    <DashboardCard 
-                        href="/status-pengajuan"
-                        title="Riwayat & Status"
-                        description="Lihat status dan riwayat semua pengajuan yang telah Anda buat."
-                        icon={<svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                     <MenuItem 
+                        href="/ajukan-izin"
+                        title="Izin / Cuti"
+                        icon={<FileCheck className="w-6 h-6" />}
                     />
-                    <DashboardCard 
+                    <MenuItem 
                         href="/laporan-penggunaan"
-                        title="Laporan Pengajuan Uang"
-                        description="Upload bukti penggunaan uang untuk minggu lalu."
-                        icon={<UploadCloud className="w-8 h-8 text-cyan-500" />}
+                        title="Laporan Uang"
+                        icon={<Upload className="w-6 h-6" />}
+                    />
+                    <MenuItem 
+                        href="/status-pengajuan"
+                        title="Riwayat"
+                        icon={<History className="w-6 h-6" />}
                     />
                 </div>
-            </main>
+            </div>
+
+            {/* --- Bottom Navigation --- */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe pt-1 px-6 flex justify-between items-center z-50">
+                <BottomNavItem icon={<Home className="w-5 h-5" />} label="Home" active href="#" />
+                <BottomNavItem icon={<LayoutGrid className="w-5 h-5" />} label="Request" href="/status-pengajuan" />
+                <BottomNavItem icon={<BarChart3 className="w-5 h-5" />} label="Stats" href="/my-absensi" />
+                <BottomNavItem icon={<User className="w-5 h-5" />} label="Profile" href="#" />
+            </div>
+            
+            {/* Safe area spacer */}
+            <div className="h-6"></div>
         </div>
     );
 }
+
