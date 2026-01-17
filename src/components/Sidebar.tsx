@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Home, FileText, Users, LogOut, BarChart3, Settings, Calendar, ClipboardList, Briefcase } from 'lucide-react'; 
+import { LayoutGrid, FileText, ClipboardCheck, Calendar, BarChart3, UserCog, Users, LogOut, Shield } from 'lucide-react'; 
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useEffect } from 'react';
@@ -28,53 +27,53 @@ const NavLink = ({ href, icon: Icon, label, isSidebarOpen, pathname, badge }: {
     badge?: number; // Optional badge count
 }) => {
     
-    const isActive = pathname.startsWith(href);
+    // Check exact match for dashboard, startswith for others
+    const isActive = href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
 
     return (
         <TooltipProvider delayDuration={0}>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Link href={href} passHref>
-                        <Button
+                    <Link href={href} className="block mb-1">
+                        <div
                             className={`
-                                w-full text-base transition-all duration-300
-                                ${isSidebarOpen ? 'justify-start pl-4 h-9 py-2' : 'justify-center h-12'}
-                                
+                                relative flex items-center transition-all duration-300 ease-in-out rounded-xl mx-2
+                                ${isSidebarOpen ? 'pl-3.5 pr-3 py-2.5' : 'pl-3.5 py-2.5 pr-0'}
                                 ${isActive 
-                                  // Style Aktif (Latar hijau-100, Teks hijau-700)
-                                  ? 'bg-emerald-100 text-emerald-700 font-semibold hover:bg-emerald-100/80' 
-                                  // Style Inaktif (Transparan)
-                                  : 'bg-transparent text-muted-foreground hover:text-emerald-500 hover:bg-emerald-50'}
+                                  ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200' 
+                                  : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'}
                             `}
                         >
-                            <div className="relative">
-                                <Icon className={`h-5 w-5 ${isSidebarOpen ? 'mr-3' : 'mr-0'}`} />
-                                {/* Badge for collapsed sidebar */}
-                                {!isSidebarOpen && badge !== undefined && badge > 0 && (
-                                    <span className="absolute -top-2 -right-2 h-4 w-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                        {badge > 9 ? '9+' : badge}
-                                    </span>
+                            <Icon className={`h-5 w-5 flex-shrink-0 transition-all duration-300 mr-3 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                            
+                            {/* Badge for collapsed sidebar - smooth fade */}
+                            <div className={`absolute top-2 right-2 transition-all duration-300 ${!isSidebarOpen && badge !== undefined && badge > 0 ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`}>
+                                <span className="h-2 w-2 bg-red-500 rounded-full border-2 border-white block"></span>
+                            </div>
+
+                            <div className={`flex items-center justify-between flex-1 overflow-hidden transition-all duration-300 ease-in-out ${isSidebarOpen ? 'opacity-100 w-full' : 'opacity-0 w-0'}`}>
+                                <span className={`font-semibold text-sm truncate whitespace-nowrap ${isActive ? 'text-white' : 'text-slate-600'}`}>
+                                    {label}
+                                </span>
+                                
+                                {/* Badge for expanded sidebar */}
+                                {badge !== undefined && badge > 0 && (
+                                    <div className={`
+                                        flex items-center justify-center h-4 min-w-[18px] px-1 rounded-full text-[10px] font-bold ml-2
+                                        ${isActive ? 'bg-white text-emerald-600' : 'bg-red-500 text-white'}
+                                    `}>
+                                        {badge > 99 ? '99+' : badge}
+                                    </div>
                                 )}
                             </div>
-                            {isSidebarOpen && (
-                                <div className="flex items-center justify-between flex-1">
-                                    <span>{label}</span>
-                                    {/* Badge for expanded sidebar */}
-                                    {badge !== undefined && badge > 0 && (
-                                        <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                                            {badge > 99 ? '99+' : badge}
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-                        </Button>
+                        </div>
                     </Link>
                 </TooltipTrigger>
                 {!isSidebarOpen && (
-                    <TooltipContent side="right">
+                    <TooltipContent side="right" className="bg-slate-900 text-white border-0">
                         <p>{label}</p>
                         {badge !== undefined && badge > 0 && (
-                            <p className="text-xs text-red-400 font-semibold">{badge} pending</p>
+                            <p className="text-xs text-red-300 font-semibold mt-1">{badge} pending</p>
                         )}
                     </TooltipContent>
                 )}
@@ -128,30 +127,30 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
             const startOfWeekStr = startOfWeek.toISOString();
 
             // Count pending money requests (this week only)
-            const { data: moneyData, count: moneyCount } = await supabase
+            const { count: moneyCount } = await supabase
                 .from('pengajuan_uang')
-                .select('id, status, created_at', { count: 'exact' })
+                .select('*', { count: 'exact', head: true })
                 .eq('status', 'pending')
                 .gte('created_at', startOfWeekStr);
 
             // Count pending item requests (this week only)
-            const { data: itemData, count: itemCount } = await supabase
+            const { count: itemCount } = await supabase
                 .from('pengajuan_barang')
-                .select('id, status, created_at', { count: 'exact' })
+                .select('*', { count: 'exact', head: true })
                 .eq('status', 'pending')
                 .gte('created_at', startOfWeekStr);
 
             // Count pending leave requests (this week only)
-            const { data: leaveData, count: leaveCount } = await supabase
+            const { count: leaveCount } = await supabase
                 .from('pengajuan_izin')
-                .select('id, status, created_at', { count: 'exact' })
+                .select('*', { count: 'exact', head: true })
                 .eq('status', 'pending')
                 .gte('created_at', startOfWeekStr);
 
             // Count pending reimbursement requests (this week only)
             const { count: reimbursementCount } = await supabase
                 .from('pengajuan_reimbursement')
-                .select('id, status, created_at', { count: 'exact' })
+                .select('*', { count: 'exact', head: true })
                 .eq('status', 'pending')
                 .gte('created_at', startOfWeekStr);
 
@@ -190,61 +189,100 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
             {/* Backdrop for mobile */}
             {isMobile && isSidebarOpen && (
                 <div 
-                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 lg:hidden"
                     onClick={closeSidebarOnMobile}
                 />
             )}
 
             <aside className={`
-                h-screen bg-card text-card-foreground flex flex-col border-r shadow-md transition-all duration-300
+                h-screen bg-white flex flex-col border-r border-slate-100 shadow-xl shadow-slate-200/50 transition-all duration-300 ease-in-out
                 ${isMobile 
                     ? `fixed inset-y-0 left-0 z-40 ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}`
-                    : `${isSidebarOpen ? 'w-64' : 'w-20'}`
+                    : `${isSidebarOpen ? 'w-64' : 'w-[70px]'}`
                 }
             `}>
-                <div className={`border-b transition-all duration-300 flex items-center justify-center ${isSidebarOpen ? 'h-20' : 'h-20'}`}>
-                    {isSidebarOpen ? (
-                        <div className="flex flex-col items-center px-2 text-center">
-                            <div className="flex items-center gap-2 font-bold text-base text-primary">
-                                <span>Sistem Informasi Manajemen</span>
-                            </div>
-                            <span className="text-[10px] text-muted-foreground font-medium mt-0.5">PT. Wedding Organizer Indonesia</span>
+                {/* Brand Logo */}
+                <div className={`flex items-center transition-all duration-300 ${isSidebarOpen ? 'px-6 h-20' : 'pl-6 h-20'}`}>
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200 flex-shrink-0 z-10">
+                            <Shield className="h-5 w-5 text-white fill-current" />
                         </div>
-                    ) : (
-                        <Settings className="h-8 w-8 text-primary" /> 
-                    )}
+                        
+                        <div className={`flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${isSidebarOpen ? 'opacity-100 max-w-[200px]' : 'opacity-0 max-w-0'}`}>
+                            <h1 className="text-lg font-bold text-emerald-600 tracking-tight leading-none whitespace-nowrap">SIPAA</h1>
+                            <span className="text-[9px] uppercase font-bold text-slate-400 tracking-widest mt-0.5 whitespace-nowrap">Admin System</span>
+                        </div>
+                    </div>
                 </div>
+
                 {/* Menu Navigasi */}
-                <nav className="flex-1 px-3 py-6 flex flex-col gap-1 overflow-y-auto overflow-x-hidden">
-                    <NavLink href="/admin" icon={Home} label="Dashboard" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-
-                    {/* Menu untuk Karyawan */}
-                    {role === 'karyawan' && (
-                        <div className="flex flex-col gap-1 pt-1">
-                             {/* Optional Divider or Label could go here */}
-                            <NavLink href="/my-absensi" icon={Calendar} label="Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                <nav className="flex-1 py-4 flex flex-col gap-0.5 overflow-y-auto overflow-x-hidden no-scrollbar">
+                    
+                    {role === 'karyawan' ? (
+                        <>
+                            {/* Section Header */}
+                            <div className="px-6 mb-2 mt-2 transition-all duration-300">
+                                <p className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
+                                    KARYAWAN
+                                </p>
+                            </div>
+                            <NavLink href="/my-absensi" icon={Calendar} label="Absensi Saya" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                             <NavLink href="/status-pengajuan" icon={FileText} label="Status Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                        </div>
-                    )}
+                        </>
+                    ) : (
+                        <>
+                            {/* Dashboard */}
+                            <NavLink href="/admin" icon={LayoutGrid} label="Dashboard" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                            
+                            {/* Main Menu Header - Locked Height */}
+                            <div className="px-6 mb-2 mt-5 transition-all duration-300">
+                                <p className={`text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
+                                    ADMINISTRATOR
+                                </p>
+                            </div>
 
-                    {/* Menu untuk Admin & Superadmin */}
-                    {(role === 'admin' || role === 'superadmin') && (
-                        <div className="flex flex-col gap-1 pt-1">
                             <NavLink href="/submissions" icon={FileText} label="Panel Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingSubmissions} />
-                            <NavLink href="/pengajuan-izin" icon={ClipboardList} label="Pengajuan Izin" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingLeaveRequests} />
+                            <NavLink href="/pengajuan-izin" icon={ClipboardCheck} label="Pengajuan Izin" isSidebarOpen={isSidebarOpen} pathname={pathname} badge={pendingLeaveRequests} />
                             <NavLink href="/absensi" icon={Calendar} label="Panel Absensi" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                             <NavLink href="/reports" icon={BarChart3} label="Laporan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                        </div>
-                    )}
 
-                    {/* Menu khusus Superadmin */}
-                    {role === 'superadmin' && (
-                        <div className="flex flex-col gap-1 pt-1">
-                            <NavLink href="/manage-users" icon={Users} label="Manajemen User" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                            <NavLink href="/data-karyawan" icon={Briefcase} label="Data Karyawan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
-                        </div>
+                            {/* Superadmin Menu */}
+                            {role === 'superadmin' && (
+                                <>
+                                    <NavLink href="/manage-users" icon={UserCog} label="Manajemen User" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                                    <NavLink href="/data-karyawan" icon={Users} label="Data Karyawan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                                </>
+                            )}
+                        </>
                     )}
                 </nav>
+
+                {/* Footer / Logout */}
+                <div className="p-3 border-t border-slate-100">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={handleLogout}
+                                    className={`
+                                        w-full flex items-center rounded-xl transition-all duration-200 group
+                                        ${isSidebarOpen ? 'pl-3.5 pr-3 py-2.5 bg-red-50 text-red-600 hover:bg-red-100' : 'pl-3.5 py-2.5 text-slate-400 hover:text-red-500'}
+                                    `}
+                                >
+                                    <LogOut className={`h-5 w-5 flex-shrink-0 transition-all duration-300 mr-3`} />
+                                    <span className={`font-semibold text-sm overflow-hidden transition-all duration-300 whitespace-nowrap ${isSidebarOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
+                                        Keluar
+                                    </span>
+                                </button>
+                            </TooltipTrigger>
+                            {!isSidebarOpen && (
+                                <TooltipContent side="right">
+                                    Logout
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
             </aside>
         </>
     );
