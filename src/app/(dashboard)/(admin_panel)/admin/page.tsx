@@ -3,13 +3,9 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/app/lib/supabase/client';
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, Package, Banknote, TrendingUp, TrendingDown, Wallet, Settings, Bell, ChevronRight, Menu } from 'lucide-react';
+import { Users, Package, Banknote, Wallet, Settings } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from '@/components/ui/button';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 // Tipe untuk data 4 kartu di atas
 interface DashboardStatCards {
@@ -152,8 +148,8 @@ export default function AdminDashboardPage() {
                         <h3 className="font-bold text-slate-900 text-lg">Status Penerimaan Pengajuan</h3>
                         <p className="text-slate-500 text-sm mt-1 max-w-lg">
                             {submissionOpen 
-                             ? "Kontrol apakah karyawan dapat mengirimkan pengajuan baru saat ini."
-                             : "Saat ini pengajuan ditutup. Karyawan tidak dapat mengirim form baru."}
+                             ? "Saat ini pengajuan di buka. karyawan dapat mengirimkan pengajuan baru saat ini."
+                             : "Saat ini pengajuan ditutup. karyawan tidak dapat mengirimkan pengajuan baru saat ini."}
                         </p>
                     </div>
                  </div>
@@ -162,7 +158,7 @@ export default function AdminDashboardPage() {
                     <span className="text-xs font-bold text-slate-400 md:hidden">STATUS SAAT INI</span>
                     <div className="flex items-center gap-3">
                         <span className="text-sm font-bold text-slate-700 uppercase">
-                            {submissionOpen ? "PENERIMAAN DIBUKA" : "TUTUP"}
+                            {submissionOpen ? "PENGAJUAN DIBUKA" : "PENGAJUAN DITUTUP"}
                         </span>
                         <Switch 
                             checked={submissionOpen}
