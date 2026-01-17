@@ -135,7 +135,7 @@ export default function AdminDashboardPage() {
             <div className="hidden md:flex justify-between items-start">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
-                    <p className="text-slate-500 mt-1">Pantau aktivitas pengajuan dan operasional harian.</p>
+                    <p className="text-slate-500 mt-1">Pantau aktivitas pengajuan dan operasional mingguan.</p>
                 </div>
             </div>
             {/* Status Penerimaan Card */}
@@ -145,7 +145,7 @@ export default function AdminDashboardPage() {
                         <Settings className={`h-6 w-6 ${submissionOpen ? 'text-emerald-600' : 'text-red-600'}`} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-slate-900 text-lg">Status Penerimaan Pengajuan</h3>
+                        <h3 className="font-bold text-slate-900 text-lg">Status Pengajuan</h3>
                         <p className="text-slate-500 text-sm mt-1 max-w-lg">
                             {submissionOpen 
                              ? "Saat ini pengajuan di buka. karyawan dapat mengirimkan pengajuan baru saat ini."
@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
                             {formatCurrency(statCards?.jumlah_disetujui)}
                         </div>
                          <p className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wider md:normal-case md:font-normal md:tracking-normal">
-                            TOTAL PENGAJUAN MINGGU INI
+                            Total Pengajuan Minggu Ini
                         </p>
                     </div>
                     
@@ -264,8 +264,8 @@ export default function AdminDashboardPage() {
                        <div className="text-3xl font-bold text-slate-900">
                            {statCards?.total_karyawan ?? 0}
                        </div>
-                       <p className="text-xs text-slate-400 mt-1 hidden md:block">Personel</p>
-                       <p className="text-xs text-slate-400 mt-1 md:hidden">Terdaftar</p>
+                       <p className="text-xs text-slate-400 mt-1 hidden md:block"> Karyawan</p>
+                       <p className="text-xs text-slate-400 mt-1 md:hidden">Karyawan</p>
                    </div>
                 </div>
             </div>
