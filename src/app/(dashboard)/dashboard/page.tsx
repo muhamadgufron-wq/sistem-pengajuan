@@ -287,9 +287,9 @@ export default function DashboardPage() {
             {/* --- Bottom Navigation --- */}
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe pt-1 px-6 flex justify-between items-center z-50">
                 <BottomNavItem icon={<Home className="w-5 h-5" />} label="Home" active href="#" />
-                <BottomNavItem icon={<LayoutGrid className="w-5 h-5" />} label="Request" href="" />
-                <BottomNavItem icon={<BarChart3 className="w-5 h-5" />} label="Stats" href="" />
-                <BottomNavItem icon={<User className="w-5 h-5" />} label="Profile" href="#" />
+                <BottomNavItem icon={<LayoutGrid className="w-5 h-5" />} label="Request" href="/under-development" />
+                <BottomNavItem icon={<BarChart3 className="w-5 h-5" />} label="Stats" href="/under-development" />
+                <BottomNavItem icon={<User className="w-5 h-5" />} label="Profile" href="/under-development" />
             </div>
             
             {/* Safe area spacer */}
