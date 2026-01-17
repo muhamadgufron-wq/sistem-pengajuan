@@ -72,7 +72,9 @@ export default function AdminDashboardPage() {
         const [statsRes, chartRes, employeeCountRes] = await Promise.all([
             supabase.rpc('get_dashboard_stat_cards'),
             supabase.rpc('get_dashboard_overview_chart'),
-            supabase.from('user_profiles_with_email').select('*', { count: 'exact', head: true })
+            supabase.from('user_profiles_with_email')
+                .select('*', { count: 'exact', head: true })
+                .eq('role', 'karyawan')
         ]);
 
         if (statsRes.error) throw statsRes.error;
