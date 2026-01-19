@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/app/lib/supabase/client';
-import { LayoutGrid, FileText, ClipboardCheck, Calendar, BarChart3, UserCog, Users, LogOut, Shield } from 'lucide-react'; 
+import { LayoutGrid, FileText, ClipboardCheck, Calendar, BarChart3, UserCog, Users, LogOut, Shield, User } from 'lucide-react'; 
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useEffect } from 'react';
@@ -228,6 +228,7 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
                             </div>
                             <NavLink href="/my-absensi" icon={Calendar} label="Absensi Saya" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                             <NavLink href="/status-pengajuan" icon={FileText} label="Status Pengajuan" isSidebarOpen={isSidebarOpen} pathname={pathname} />
+                            <NavLink href="/profile" icon={User} label="Profil Saya" isSidebarOpen={isSidebarOpen} pathname={pathname} />
                         </>
                     ) : (
                         <>

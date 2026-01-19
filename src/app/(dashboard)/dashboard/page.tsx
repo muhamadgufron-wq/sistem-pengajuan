@@ -289,7 +289,7 @@ export default function DashboardPage() {
                 <BottomNavItem icon={<Home className="w-5 h-5" />} label="Home" active href="#" />
                 <BottomNavItem icon={<LayoutGrid className="w-5 h-5" />} label="Request" href="/under-development" />
                 <BottomNavItem icon={<BarChart3 className="w-5 h-5" />} label="Stats" href="/under-development" />
-                <BottomNavItem icon={<User className="w-5 h-5" />} label="Profile" href="/under-development" />
+                <BottomNavItem icon={<User className="w-5 h-5" />} label="Profile" href="/profile" />
             </div>
             
             {/* Safe area spacer */}
