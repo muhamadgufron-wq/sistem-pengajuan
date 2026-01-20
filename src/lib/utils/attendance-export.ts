@@ -25,9 +25,12 @@ function formatTime(isoString: string | null): string {
 /**
  * Format date from ISO string to DD/MM/YYYY
  */
-function formatDate(isoString: string): string {
+/**
+ * Format date from ISO string to Day Name, DD/MM/YYYY
+ */
+function formatDateFull(isoString: string): string {
   const date = new Date(isoString);
-  return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return date.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 /**
@@ -55,7 +58,9 @@ function getStatusText(status: string): string {
     'izin': 'Izin',
     'sakit': 'Sakit',
     'alpha': 'Alpha',
-    'cuti': 'Cuti'
+    'cuti': 'Cuti',
+    'libur': 'Libur',
+    'lembur': 'Lembur'
   };
   return statusMap[status] || status;
 }
@@ -67,21 +72,30 @@ export function exportAttendanceToPDF(
   data: AttendanceExportData[],
   dateRange: string
 ): void {
-  const doc = new jsPDF('landscape');
+  const doc = new jsPDF('portrait');
+
+  // Determine Title logic
+  const uniqueNames = Array.from(new Set(data.map(d => d.full_name)));
+  let title = 'Rekap Absensi Karyawan';
+  
+  if (uniqueNames.length === 1) {
+    title = `Rekap Absensi ${uniqueNames[0]}`;
+  } else if (uniqueNames.length === 0) {
+    title = 'Rekap Absensi';
+  }
 
   // Add title
-  doc.setFontSize(16);
-  doc.text('Laporan Absensi Karyawan', 14, 15);
+  doc.setFontSize(14);
+  doc.text(title, 14, 15);
   
   doc.setFontSize(10);
   doc.text(`Periode: ${dateRange}`, 14, 22);
   doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 14, 27);
 
   // Prepare table data
-  const tableData = data.map((record, index) => [
-    index + 1,
+  const tableData = data.map((record) => [
     record.full_name,
-    formatDate(record.tanggal),
+    formatDateFull(record.tanggal),
     formatTime(record.check_in_time),
     formatTime(record.check_out_time),
     calculateDuration(record.check_in_time, record.check_out_time),
@@ -91,22 +105,23 @@ export function exportAttendanceToPDF(
 
   // Add table
   autoTable(doc, {
-    head: [['No', 'Nama', 'Tanggal', 'Masuk', 'Pulang', 'Durasi', 'Keterangan', 'Status']],
+    head: [['Nama', 'Hari Tanggal', 'Masuk', 'Pulang', 'Durasi', 'Keterangan', 'Status']],
     body: tableData,
     startY: 32,
     styles: { fontSize: 8, cellPadding: 2 },
     headStyles: { fillColor: [68, 114, 196], textColor: 255, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [240, 240, 240] },
+    alternateRowStyles: { fillColor: [248, 248, 248] },
     columnStyles: {
-      0: { cellWidth: 10 },
-      1: { cellWidth: 40 },
-      2: { cellWidth: 25 },
-      3: { cellWidth: 20 },
-      4: { cellWidth: 20 },
-      5: { cellWidth: 20 },
-      6: { cellWidth: 50 },
-      7: { cellWidth: 20 },
+      0: { cellWidth: 35 }, // Nama
+      1: { cellWidth: 35 }, // Hari Tanggal
+      2: { cellWidth: 18 }, // Masuk
+      3: { cellWidth: 18 }, // Pulang
+      4: { cellWidth: 18 }, // Durasi
+      5: { cellWidth: 35 }, // Keterangan
+      6: { cellWidth: 20 }, // Status
     },
+    // Ensure table fits in portrait A4 (approx 180mm width usable)
+    // 35+35+18+18+18+35+20 = 179mm. Perfect.
   });
 
   // Add footer with page numbers
@@ -124,7 +139,8 @@ export function exportAttendanceToPDF(
 
   // Generate filename
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  const filename = `Absensi_${dateRange.replace(/\s/g, '_')}_${timestamp}.pdf`;
+  const safeTitle = title.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '_');
+  const filename = `${safeTitle}_${dateRange.replace(/\s/g, '_')}_${timestamp}.pdf`;
 
   // Download file
   doc.save(filename);
