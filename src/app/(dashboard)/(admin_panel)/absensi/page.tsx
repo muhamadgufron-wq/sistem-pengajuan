@@ -6,6 +6,7 @@ import { RefreshCcwIcon, FileText } from 'lucide-react';
 import AttendanceTable from '@/components/absensi/AttendanceTable';
 import AttendanceFilters from '@/components/absensi/AttendanceFilters';
 import AttendanceStats from '@/components/absensi/AttendanceStats';
+import AttendanceActions from '@/components/absensi/AttendanceActions';
 import { format } from 'date-fns';
 
 export default async function AdminAbsensiPage({
@@ -104,11 +105,11 @@ export default async function AdminAbsensiPage({
           <p className="text-sm text-muted-foreground">Pantau kehadiran karyawan secara real-time</p>
         </div>
         <div className="flex items-center gap-2">
-            {/* These buttons could be client components or use router.refresh() */}
-            {/* <Button variant="outline" size="sm">
-                <RefreshCcwIcon className="h-4 w-4 mr-2" />
-                Refresh
-            </Button> */}
+            <AttendanceActions 
+                data={processedData} 
+                dateFrom={dateFromStr} 
+                dateTo={dateToStr} 
+            />
         </div>
       </div>
 
