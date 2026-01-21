@@ -5,6 +5,7 @@ import SubmissionStatusCard from '@/components/dashboard/SubmissionStatusCard';
 import StatsCards from '@/components/dashboard/StatsCards';
 import WeeklyChartSection from '@/components/dashboard/WeeklyChartSection';
 import { StatsGridSkeleton, ChartSkeleton } from '@/components/dashboard/skeletons';
+import TextType from '@/components/react-bits/TextType';
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient(); 
@@ -25,7 +26,19 @@ export default async function AdminDashboardPage() {
             {/* Header - Desktop */}
             <div className="hidden md:flex justify-between items-start">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center">
+                        <TextType 
+                            text={["Dashboard Overview", "Selamat Datang Admin!", "Pantau Aktivitas..."]}
+                            typingSpeed={75}
+                            pauseDuration={1500}
+                            showCursor={true}
+                            cursorCharacter="_"
+                            deletingSpeed={50}
+                            variableSpeed={null}
+                            cursorBlinkDuration={0.5}
+                            loop={true}
+                        />
+                    </h1>
                     <p className="text-slate-500 mt-1">Pantau aktivitas pengajuan dan operasional mingguan.</p>
                 </div>
             </div>
