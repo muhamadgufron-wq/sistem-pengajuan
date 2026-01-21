@@ -195,11 +195,12 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
             )}
 
             <aside className={`
-                h-screen bg-white flex flex-col border-r border-slate-100 shadow-xl shadow-slate-200/50 transition-all duration-300 ease-in-out
-                ${isMobile 
-                    ? `fixed inset-y-0 left-0 z-40 ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}`
-                    : `${isSidebarOpen ? 'w-64' : 'w-[70px]'}`
-                }
+                bg-white h-screen flex flex-col border-r border-slate-100 shadow-xl shadow-slate-200/50 transition-all duration-300 ease-in-out
+                fixed inset-y-0 left-0 z-40 
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                lg:static lg:translate-x-0
+                ${isSidebarOpen ? 'lg:w-64' : 'lg:w-[70px]'} 
+                ${isMobile ? 'w-64' : ''}
             `}>
                 {/* Brand Logo */}
                 <div className={`flex items-center transition-all duration-300 ${isSidebarOpen ? 'px-6 h-20' : 'pl-6 h-20'}`}>

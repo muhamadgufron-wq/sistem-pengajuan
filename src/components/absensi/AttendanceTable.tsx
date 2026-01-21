@@ -1,0 +1,269 @@
+'use client';
+
+import { useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LogIn, LogOut } from 'lucide-react';
+import { formatTime } from '@/lib/utils/camera';
+import { Badge } from '@/components/ui/badge'; // Using Badge instead of custom span if available, else standard
+
+interface AttendanceRecord {
+  id: number;
+  user_id: string;
+  full_name: string;
+  tanggal: string;
+  check_in_time: string | null;
+  check_in_photo_url: string | null;
+  check_in_keterangan: string | null;
+  check_out_time: string | null;
+  check_out_photo_url: string | null;
+  status: string;
+  catatan: string | null;
+}
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const statusMap: Record<string, { label: string; className: string }> = {
+    Hadir: { label: 'Hadir', className: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400' },
+    Izin: { label: 'Izin', className: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400' },
+    Sakit: { label: 'Sakit', className: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400' },
+    Alpha: { label: 'Alpha', className: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400' },
+    Cuti: { label: 'Cuti', className: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
+    Libur: { label: 'Libur', className: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400' },
+    Lembur: { label: 'Lembur', className: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400' },
+  };
+
+  // Case insensitive match
+  const normalizedStatus = Object.keys(statusMap).find(k => k.toLowerCase() === status.toLowerCase()) || 'Hadir';
+  const statusInfo = statusMap[normalizedStatus];
+
+  return (
+    <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${statusInfo.className}`}>
+      {statusInfo.label}
+    </span>
+  );
+};
+
+export default function AttendanceTable({ data }: { data: AttendanceRecord[] }) {
+  const [viewingPhoto, setViewingPhoto] = useState<{ url: string; type: string; name: string; timestamp: string | null; date: string; } | null>(null);
+  const [viewingDetail, setViewingDetail] = useState<AttendanceRecord | null>(null);
+
+  const handleViewPhoto = (url: string, type: string, name: string, timestamp: string | null, date: string) => {
+    setViewingPhoto({ url, type, name, timestamp, date });
+  };
+
+  const calculateWorkDuration = (checkIn: string | null, checkOut: string | null): string => {
+    if (!checkIn || !checkOut) return '-';
+    const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}j ${minutes}m`;
+  };
+
+  return (
+    <>
+      <Table>
+        <TableHeader className="bg-muted/30">
+          <TableRow>
+            <TableHead className="w-[20%]">Karyawan</TableHead>
+            <TableHead className="w-[15%]">Tanggal</TableHead>
+            <TableHead className="w-[15%]">Masuk</TableHead>
+            <TableHead className="w-[15%]">Pulang</TableHead>
+            <TableHead className="w-[10%]">Durasi</TableHead>
+            <TableHead className="w-[15%]">Keterangan</TableHead>
+            <TableHead className="w-[10%] text-right">Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                Tidak ada data ditemukan
+              </TableCell>
+            </TableRow>
+          ) : (
+            data.map((record) => (
+              <TableRow key={`${record.user_id}-${record.tanggal}`} onClick={() => setViewingDetail(record)} className="cursor-pointer hover:bg-muted/50 [&_td]:py-4">
+                <TableCell className="font-medium">{record.full_name}</TableCell>
+                <TableCell>
+                    {new Date(record.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' })}
+                </TableCell>
+                <TableCell>
+                    {record.check_in_time ? (
+                    <div className="flex items-center gap-2">
+                        <span className="font-medium">{formatTime(new Date(record.check_in_time))}</span>
+                        {record.check_in_photo_url && (
+                            <div 
+                            className="h-1.5 w-1.5 rounded-full bg-blue-500" 
+                            title="Ada foto"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewPhoto(`/api/foto-absensi/${record.check_in_photo_url}`, 'Masuk', record.full_name, record.check_in_time, record.tanggal);
+                            }}
+                            />
+                        )}
+                    </div>
+                    ) : <span className="text-muted-foreground">-</span>}
+                </TableCell>
+                <TableCell>
+                    {record.check_out_time ? (
+                    <div className="flex items-center gap-2">
+                        <span className="font-medium">{formatTime(new Date(record.check_out_time))}</span>
+                        {record.check_out_photo_url && (
+                            <div 
+                            className="h-1.5 w-1.5 rounded-full bg-blue-500" 
+                            title="Ada foto"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewPhoto(`/api/foto-absensi/${record.check_out_photo_url}`, 'Pulang', record.full_name, record.check_out_time, record.tanggal);
+                            }}
+                            />
+                        )}
+                    </div>
+                    ) : <span className="text-muted-foreground">-</span>}
+                </TableCell>
+                <TableCell className="text-muted-foreground font-mono text-xs">
+                    {calculateWorkDuration(record.check_in_time, record.check_out_time)}
+                </TableCell>
+                <TableCell className="truncate max-w-[150px]" title={record.check_in_keterangan || ''}>
+                    {record.check_in_keterangan || '-'}
+                </TableCell>
+                <TableCell className="text-right">
+                    <StatusBadge status={record.status} />
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+
+      {/* Dialog Foto */}
+      <Dialog open={!!viewingPhoto} onOpenChange={(open) => !open && setViewingPhoto(null)}>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-black/95 text-white border-0">
+          <DialogTitle className="sr-only">Foto Absensi</DialogTitle>
+          <div className="relative flex items-center justify-center p-4 bg-muted/10 h-[60vh]">
+              {viewingPhoto && (
+                <img 
+                  src={viewingPhoto.url} 
+                  alt="Attendance Evidence" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=Foto+Tidak+Tersedia'; }}
+                />
+              )}
+          </div>
+          <div className="p-4 bg-background text-foreground">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-lg">{viewingPhoto?.type} - {viewingPhoto?.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {viewingPhoto?.date && new Date(viewingPhoto?.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                    {' • '}
+                    {viewingPhoto?.timestamp && formatTime(new Date(viewingPhoto?.timestamp))}
+                  </p>
+                </div>
+                <Button variant="destructive" size="sm" onClick={() => setViewingPhoto(null)}>Tutup</Button>
+              </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Detail */}
+      <Dialog open={!!viewingDetail} onOpenChange={(open) => !open && setViewingDetail(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Detail Absensi</DialogTitle>
+                <DialogDescription>Informasi lengkap kehadiran karyawan.</DialogDescription>
+            </DialogHeader>
+            {viewingDetail && (
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
+                      <div>
+                        <p className="font-semibold">{viewingDetail.full_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {new Date(viewingDetail.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <StatusBadge status={viewingDetail.status} />
+                  </div>
+                  
+                  {/* Photos Section */}
+                  <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2 border rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                            <LogIn className="h-4 w-4 text-green-600" />
+                            <span className="font-medium text-sm">Masuk</span>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-2xl font-bold">{viewingDetail.check_in_time ? formatTime(new Date(viewingDetail.check_in_time)) : '--:--'}</p>
+                            {viewingDetail.check_in_photo_url ? (
+                              <div className="aspect-square relative rounded-md overflow-hidden bg-muted">
+                                <img
+                                  src={`/api/foto-absensi/${viewingDetail.check_in_photo_url}`}
+                                  alt="Foto Masuk"
+                                  className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => handleViewPhoto(`/api/foto-absensi/${viewingDetail.check_in_photo_url}`, 'Masuk', viewingDetail.full_name, viewingDetail.check_in_time, viewingDetail.tanggal)}
+                                />
+                              </div>
+                            ) : (
+                              <div className="aspect-square flex items-center justify-center bg-muted text-muted-foreground text-xs text-center rounded-md p-2">
+                                Tidak ada foto
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 border rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                            <LogOut className="h-4 w-4 text-orange-600" />
+                            <span className="font-medium text-sm">Pulang</span>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-2xl font-bold">{viewingDetail.check_out_time ? formatTime(new Date(viewingDetail.check_out_time)) : '--:--'}</p>
+                            {viewingDetail.check_out_photo_url ? (
+                              <div className="aspect-square relative rounded-md overflow-hidden bg-muted">
+                                <img
+                                  src={`/api/foto-absensi/${viewingDetail.check_out_photo_url}`}
+                                  alt="Foto Pulang"
+                                  className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => handleViewPhoto(`/api/foto-absensi/${viewingDetail.check_out_photo_url}`, 'Pulang', viewingDetail.full_name, viewingDetail.check_out_time, viewingDetail.tanggal)}
+                                />
+                              </div>
+                            ) : (
+                              <div className="aspect-square flex items-center justify-center bg-muted text-muted-foreground text-xs text-center rounded-md p-2">
+                                Tidak ada foto
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                  </div>
+
+                  {/* Duration Section */}
+                  <div className="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
+                    <span className="text-sm font-medium">Durasi Kerja</span>
+                    <span className="font-bold text-lg">{calculateWorkDuration(viewingDetail.check_in_time, viewingDetail.check_out_time)}</span>
+                  </div>
+
+                  {/* Keterangan & Catatan Section */}
+                  <div className="space-y-3">
+                    <div className="border rounded-lg p-3">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1">Keterangan</p>
+                      <p className="text-sm">{viewingDetail.check_in_keterangan || '-'}</p>
+                    </div>
+
+                    {viewingDetail.catatan && (
+                        <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800 p-3 rounded-lg">
+                          <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-400 mb-1">Catatan Tambahan</p>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-300">{viewingDetail.catatan}</p>
+                        </div>
+                    )}
+                  </div>
+                </div>
+            )}
+            <DialogFooter>
+                <Button  variant="destructive" onClick={() => setViewingDetail(null)}>Tutup</Button>
+            </DialogFooter>
+          </DialogContent>
+      </Dialog>
+    </>
+  );
+}

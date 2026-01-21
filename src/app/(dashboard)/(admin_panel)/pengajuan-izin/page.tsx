@@ -179,7 +179,7 @@ export default function AdminPengajuanIzinPage() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="button" onClick={handleUpdate} className="bg-green-600 hover:bg-green-700">
+                        <Button type="button" onClick={handleUpdate} className="bg-emerald-500 text-white shadow-md shadow-emerald-200 hover:bg-emerald-600">
                             Simpan Perubahan
                         </Button>
                     </DialogFooter>
@@ -379,9 +379,10 @@ export default function AdminPengajuanIzinPage() {
                                                         Lihat Bukti
                                                     </Button>
                                                 )}
-                                                <Button 
+                                                <Button
                                                     variant="default" 
                                                     size="sm" 
+                                                    className="bg-emerald-500 text-white shadow-md shadow-emerald-200 hover:bg-emerald-600 border-none"
                                                     onClick={(e) => { 
                                                         e.stopPropagation();
                                                         openUpdateDialog(item); 

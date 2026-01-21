@@ -189,7 +189,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, onSuccess }
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-            <Button type="submit" disabled={isLoading} className="bg-green-500 hover:bg-green-600 text-white">
+            <Button type="submit" disabled={isLoading} className="bg-emerald-500 text-white shadow-md shadow-emerald-200 hover:bg-emerald-600">
               {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </Button>
           </DialogFooter>

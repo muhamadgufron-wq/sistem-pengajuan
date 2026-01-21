@@ -832,7 +832,7 @@ export default function AdminPage() {
             <Button
               type="button"
               onClick={handleUpdate}
-              className="bg-green-300 hover:bg-green-500"
+              className="bg-emerald-500 text-white shadow-md shadow-emerald-200 hover:bg-emerald-600"
               disabled={isUploading}
             >
               {isUploading ? 'Mengupload...' : 'Simpan Perubahan'}
@@ -1233,7 +1233,7 @@ export default function AdminPage() {
                   </Popover>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Button onClick={fetchData}>
+                  <Button onClick={fetchData} className="bg-emerald-500 text-white shadow-md shadow-emerald-200 hover:bg-emerald-600 border-none">
                     <SearchIcon className="mr-2 h-4 w-4" /> Terapkan
                   </Button>
                   <Button onClick={handleFilterReset} variant="outline">
@@ -1544,6 +1544,7 @@ export default function AdminPage() {
                           <Button
                             variant="default"
                             size="sm"
+                            className="bg-emerald-500 text-white shadow-md shadow-emerald-200 hover:bg-emerald-600 border-none"
                             onClick={(e) => {
                               e.stopPropagation();
                               openUpdateDialog(item as PengajuanItem);
