@@ -1,8 +1,8 @@
-# SIPAA (Sistem Pengajuan Barang dan Uang)
+# SIPAA (Sistem Informasi Pengajuan Barang, Uang, dan Administrasi)
 
 **SIPAA** adalah aplikasi berbasis web yang dirancang untuk mempermudah dan memusatkan proses pengajuan barang, uang, dan reimbursement perusahaan. Sistem ini menawarkan transparansi, kecepatan, dan profesionalisme dalam setiap alur pengajuan.
 
-![SIPAA Dashboard](/public/hero-image.png) _<!-- Anda bisa menambahkan screenshot dashboard di sini -->_
+![SIPAA Dashboard](/public/hero-image.png)
 
 ## 🚀 Fitur Utama
 
