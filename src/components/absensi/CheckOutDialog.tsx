@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { CameraCapture } from './CameraCapture';
-import { createClient } from '@/app/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { uploadAttendancePhoto, formatTime, calculateWorkDuration } from '@/lib/utils/camera';
 import { toast } from 'sonner';
 import { Loader2, Clock } from 'lucide-react';

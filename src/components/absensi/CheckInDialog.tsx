@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CameraCapture } from './CameraCapture';
-import { createClient } from '@/app/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { uploadAttendancePhoto, formatTime } from '@/lib/utils/camera';
 import { getCheckInStatus, isWednesday } from '@/lib/utils/attendance-utils';
 import { toast } from 'sonner';

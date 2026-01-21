@@ -1,5 +1,5 @@
 
-import { createClient } from '@/app/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import WeeklyOverviewChart from '@/components/dashboard/WeeklyOverviewChart';
 
 export default async function WeeklyChartSection() {

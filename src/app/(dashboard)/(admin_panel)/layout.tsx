@@ -1,6 +1,6 @@
 
 import { redirect } from 'next/navigation';
-import { createClient } from '@/app/lib/supabase/server'; 
+import { createClient } from '@/lib/supabase/server'; 
 import AdminPanelShell from '@/components/layout/AdminPanelShell'; // Import the new shell
 
 // Tipe untuk data user/profile

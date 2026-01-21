@@ -1,5 +1,5 @@
 
-import { createClient } from '@/app/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { Users, Package, Banknote, Wallet, Settings } from 'lucide-react';
 
 interface DashboardStatCards {

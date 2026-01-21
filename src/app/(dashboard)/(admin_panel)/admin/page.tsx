@@ -1,6 +1,6 @@
 
 import { Suspense } from 'react';
-import { createClient } from '@/app/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import SubmissionStatusCard from '@/components/dashboard/SubmissionStatusCard';
 import StatsCards from '@/components/dashboard/StatsCards';
 import WeeklyChartSection from '@/components/dashboard/WeeklyChartSection';

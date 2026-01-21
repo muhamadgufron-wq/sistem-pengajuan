@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,7 +168,7 @@ export default function LoginPage() {
               </div>
               
               <div className="flex justify-end">
-                <Link href="/lupa-password" className="text-sm font-medium text-emerald-600 hover:text-emerald-500">
+                <Link href="/forgot-password" className="text-sm font-medium text-emerald-600 hover:text-emerald-500">
                   Lupa Password?
                 </Link>
               </div>

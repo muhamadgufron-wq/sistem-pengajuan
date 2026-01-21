@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/app/lib/supabase/client'; 
-import Sidebar from "@/components/Sidebar";
+import { createClient } from '@/lib/supabase/client'; 
+import Sidebar from "@/components/layout/Sidebar";
 import { Button } from '@/components/ui/button';
 import { Menu, LogOut, User } from 'lucide-react';
 import { toast } from 'sonner';
