@@ -176,7 +176,7 @@ export default async function ProfilePage() {
         </div>
 
         {/* Logout Button */}
-        <form action="/auth/signout" method="post" className="pt-2">
+        <form action="/signout" method="post" className="pt-2">
              <button type="submit" className="w-full bg-red-50 hover:bg-red-100 active:scale-95 transition-all text-red-500 font-bold py-4 rounded-2xl flex items-center justify-center gap-2">
                 <LogOut className="w-5 h-5" />
                 <span>Logout</span>
