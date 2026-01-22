@@ -223,17 +223,17 @@ export default function DashboardPage() {
                                 attendanceStatus === 'checked_in' ? 'text-green-600' :
                                 'text-slate-800'
                              }`}>
-                                {attendanceStatus === 'not_checked_in' && 'Siap Masuk'}
-                                {attendanceStatus === 'checked_in' && 'Sudah Masuk'}
-                                {attendanceStatus === 'checked_out' && 'Sudah Pulang'}
+                                {attendanceStatus === 'not_checked_in' && 'BelumMasuk'}
+                                {attendanceStatus === 'checked_in' && 'Masuk'}
+                                {attendanceStatus === 'checked_out' && 'Pulang'}
                              </h2>
                         </div>
                         <Link href="/my-absensi">
                             <Button className={`
                                 rounded-xl px-6 h-11 shadow-lg transition-all active:scale-95
                                 ${attendanceStatus === 'not_checked_in' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200 text-white' : ''}
-                                ${attendanceStatus === 'checked_in' ? 'bg-green-500 hover:bg-green-600 shadow-green-200 text-white' : ''}
-                                ${attendanceStatus === 'checked_out' ? 'bg-gray-100 text-gray-400 shadow-none cursor-not-allowed' : ''}
+                                ${attendanceStatus === 'checked_in' ? 'bg-red-500 hover:bg-red-600 shadow-red-200 text-white' : ''}
+                                ${attendanceStatus === 'checked_out' ? 'bg-red-500 text-gray-400 shadow-none cursor-not-allowed' : ''}
                             `} disabled={attendanceStatus === 'checked_out'}>
                                 {attendanceStatus === 'not_checked_in' && <><ArrowRight className="w-4 h-4 mr-2" /> Masuk</>}
                                 {attendanceStatus === 'checked_in' && <><ArrowRight className="w-4 h-4 mr-2" /> Pulang</>}

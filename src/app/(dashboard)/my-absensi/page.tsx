@@ -3,13 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { CheckInDialog } from '@/components/absensi/CheckInDialog';
 import { CheckOutDialog } from '@/components/absensi/CheckOutDialog';
 import { toast } from 'sonner';
-import { Calendar, Clock, LogIn, LogOut, TrendingUp, AlertTriangle, ChevronLeft, MapPin } from 'lucide-react';
-import { formatDate, formatTime } from '@/lib/utils/camera';
+import { Calendar, LogIn, LogOut, ChevronLeft } from 'lucide-react';
+import { formatTime } from '@/lib/utils/camera';
 import { isWednesday } from '@/lib/utils/attendance-utils';
 import { format, differenceInMinutes } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -121,21 +119,54 @@ export default function AbsensiPage() {
         setTodayAttendance(todayData);
       }
 
-      // Fetch monthly stats
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
+      // Fetch monthly stats with custom period (21st prev month - 20th current month)
+      const now = new Date();
+      const currentDay = now.getDate();
+      let startDate, endDate;
 
-      const { data: statsData, error: statsError } = await supabase
-        .rpc('get_attendance_stats', {
-          p_user_id: user.id,
-          p_month: currentMonth,
-          p_year: currentYear,
+      if (currentDay >= 21) {
+          // Period is this month 21st to next month 20th
+          startDate = new Date(now.getFullYear(), now.getMonth(), 21);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 20);
+      } else {
+          // Period is prev month 21st to this month 20th
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 21);
+          endDate = new Date(now.getFullYear(), now.getMonth(), 20);
+      }
+
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const endDateStr = format(endDate, 'yyyy-MM-dd');
+
+      // Fetch all attendance records for this period
+      const { data: periodData, error: periodError } = await supabase
+        .from('absensi')
+        .select('status')
+        .eq('user_id', user.id)
+        .gte('tanggal', startDateStr)
+        .lte('tanggal', endDateStr);
+
+      if (periodError) {
+        console.error('Error fetching stats:', periodError);
+      } else {
+        // Calculate stats manually
+        const newStats: AttendanceStats = {
+          total_hadir: 0,
+          total_izin: 0,
+          total_sakit: 0,
+          total_alpha: 0,
+          total_cuti: 0
+        };
+
+        periodData?.forEach((record: any) => {
+          const s = record.status?.toLowerCase();
+          if (s === 'hadir' || s === 'telat') newStats.total_hadir++;
+          else if (s === 'izin') newStats.total_izin++;
+          else if (s === 'sakit') newStats.total_sakit++;
+          else if (s === 'alpha') newStats.total_alpha++;
+          else if (s === 'cuti') newStats.total_cuti++;
         });
 
-      if (statsError) {
-        console.error('Error fetching stats:', statsError);
-      } else if (statsData && statsData.length > 0) {
-        setStats(statsData[0]);
+        setStats(newStats);
       }
 
       // Fetch recent history (last 7 days)
@@ -177,6 +208,22 @@ export default function AbsensiPage() {
       setIsLoading(false);
     }
   }, [supabase, router]);
+
+  // Determine label for display
+  const getPeriodLabel = () => {
+      const now = new Date();
+      const currentDay = now.getDate();
+      let start, end;
+
+      if (currentDay >= 21) {
+          start = new Date(now.getFullYear(), now.getMonth(), 21);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 20);
+      } else {
+          start = new Date(now.getFullYear(), now.getMonth() - 1, 21);
+          end = new Date(now.getFullYear(), now.getMonth(), 20);
+      }
+      return `${format(start, 'd MMM yyyy', { locale: id })} - ${format(end, 'd MMM yyyy', { locale: id })}`;
+  };
 
   useEffect(() => {
     fetchData();
@@ -234,7 +281,7 @@ export default function AbsensiPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
       {/* 1. Header Minimalis */}
-      <div className="px-6 py-6 flex items-center">
+      <div className="px-4 py-4 flex items-center">
         <Link href="/dashboard" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
             <ChevronLeft className="w-6 h-6 text-slate-800" />
         </Link>
@@ -254,7 +301,7 @@ export default function AbsensiPage() {
             ${hasCheckedOut ? 'bg-gray-100 text-gray-500' : hasCheckedIn ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-500'}
         `}>
              <span className={`w-2 h-2 rounded-full ${hasCheckedOut ? 'bg-gray-400' : hasCheckedIn ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-             {hasCheckedOut ? 'Sudah Pulang' : hasCheckedIn ? 'Sudah Masuk' : 'Belum Masuk'}
+             {hasCheckedOut ? 'Pulang' : hasCheckedIn ? 'Masuk' : 'Belum Masuk'}
         </div>
       </div>
 
@@ -325,7 +372,7 @@ export default function AbsensiPage() {
                 relative w-48 h-48 rounded-full shadow-2xl flex flex-col items-center justify-center transition-all duration-300 transform active:scale-95
                 ${incompleteAttendance ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-200' :
                   !hasCheckedIn ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-emerald-200' : 
-                  !hasCheckedOut ? 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-blue-200' : 
+                  !hasCheckedOut ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-200' : 
                   'bg-gray-100 text-gray-300 shadow-none cursor-not-allowed'}
             `}
           >
@@ -350,7 +397,12 @@ export default function AbsensiPage() {
       {/* Monthly Statistics - Compact */}
       {stats && (
         <div className="px-6 mb-6">
-            <h3 className="text-sm font-bold text-slate-800 mb-3 px-1">Statistik Bulan Ini</h3>
+            <div className="flex justify-between items-end mb-3 px-1">
+                <h3 className="text-sm font-bold text-slate-800">Statistik Periode Ini</h3>
+                <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+                    {getPeriodLabel()}
+                </span>
+            </div>
             <div className="grid grid-cols-5 gap-2">
               <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100/50">
                 <p className="text-xl font-bold text-green-600">{stats.total_hadir}</p>

@@ -17,7 +17,9 @@ import {
     CheckCircle2,
     XCircle,
     AlertCircle,
-    FileText
+    FileText,
+    X,
+    FileImage
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -44,7 +46,9 @@ export default function StatusPengajuanPage() {
     // View State
     const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null);
     const [viewingProof, setViewingProof] = useState<string | null>(null);
+    const [viewingReimbursementProofs, setViewingReimbursementProofs] = useState<any[] | null>(null);
     const [currentSignedUrl, setCurrentSignedUrl] = useState<string | null>(null);
+    const [reimbursementSignedUrls, setReimbursementSignedUrls] = useState<{url: string, type: string, name: string}[]>([]);
     const [loadingImage, setLoadingImage] = useState(false);
 
     // Initial Data Fetch
@@ -58,7 +62,7 @@ export default function StatusPengajuanPage() {
                 supabase.from('pengajuan_barang').select('*').eq('user_id', user.id),
                 supabase.from('pengajuan_uang').select('*').eq('user_id', user.id),
                 supabase.from('pengajuan_izin').select('*').eq('user_id', user.id),
-                supabase.from('pengajuan_reimbursement').select('*').eq('user_id', user.id)
+                supabase.from('pengajuan_reimbursement').select('*, reimbursement_bukti_files(*)').eq('user_id', user.id)
             ]);
 
             const merged = [
@@ -144,6 +148,13 @@ export default function StatusPengajuanPage() {
             return error ? null : data.signedUrl;
         } catch { return null; }
     };
+
+    const getReimbursementProofUrl = async (path: string) => {
+        try {
+            const { data, error } = await supabase.storage.from('bukti-reimbursement').createSignedUrl(path, 3600);
+            return error ? null : data.signedUrl;
+        } catch { return null; }
+    };
     
     useEffect(() => {
         if (viewingProof) {
@@ -154,6 +165,23 @@ export default function StatusPengajuanPage() {
             });
         }
     }, [viewingProof, supabase]);
+
+    useEffect(() => {
+        if (viewingReimbursementProofs && viewingReimbursementProofs.length > 0) {
+            setLoadingImage(true);
+            const fetchUrls = async () => {
+                const results = await Promise.all(viewingReimbursementProofs.map(async (file) => {
+                    const url = await getReimbursementProofUrl(file.file_path);
+                    return url ? { url, type: file.file_name.split('.').pop(), name: file.file_name } : null;
+                }));
+                setReimbursementSignedUrls(results.filter(Boolean) as any);
+                setLoadingImage(false);
+            };
+            fetchUrls();
+        } else {
+            setReimbursementSignedUrls([]);
+        }
+    }, [viewingReimbursementProofs, supabase]);
 
     return (
         <div className="min-h-screen bg-gray-50/50">
@@ -192,27 +220,34 @@ export default function StatusPengajuanPage() {
                 ) : filteredSubmissions.length > 0 ? (
                     filteredSubmissions.map((item) => (
                         <div 
-                            key={item.id} 
+                            key={`${item.type}-${item.id}`} 
                             onClick={() => setSelectedSubmission(item)}
-                            className="bg-white p-5 rounded-[24px] border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
+                            className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
                         >
-                            <div className="flex justify-between items-start mb-3">
-                                <div className="flex gap-4 items-center">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${getIconBg(item.type)}`}>
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="flex gap-3 items-center">
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${getIconBg(item.type)}`}>
                                         {getIcon(item.type)}
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-slate-800 text-base">
+                                        <h3 className="font-bold text-slate-800 text-sm">
                                             {item.type === 'barang' ? item.nama_barang : 
                                              item.type === 'izin' ? (item.jenis === 'sakit' ? 'Izin Sakit' : item.jenis === 'cuti' ? 'Cuti Tahunan' : 'Izin Lainnya') :
                                              item.type === 'uang' ? 'Pengajuan Uang' : 'Reimbursement'}
                                         </h3>
-                                        <div className="flex items-center gap-1.5 mt-1">
-                                            <span className="text-slate-400 text-xs font-medium">{formatDate(item.created_at)}</span>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                            <span className="text-slate-400 text-[10px] font-medium">{formatDate(item.created_at)}</span>
                                             <span className="text-slate-300">•</span>
-                                            <span className="text-slate-500 text-xs font-medium">
+                                            <span className="text-slate-500 text-[10px] font-medium">
                                                 {
-                                                    item.type === 'barang' ? `${item.jumlah} Unit` :
+                                                    item.type === 'barang' ? (
+                                                        item.normalizedStatus === 'disetujui' && item.jumlah_disetujui != null ? 
+                                                        <span>
+                                                            <span className="text-emerald-600 font-bold">{item.jumlah_disetujui} Unit</span>
+                                                            {item.jumlah_disetujui !== item.jumlah && <span className="text-slate-400 ml-1">(dari {item.jumlah})</span>}
+                                                        </span>
+                                                        : `${item.jumlah} Unit`
+                                                    ) :
                                                     item.type === 'izin' ? `${item.jumlah_hari} Hari` :
                                                     item.type === 'uang' ? 'Pengajuan Uang' : 'Reimbursement'
                                                 }
@@ -220,29 +255,44 @@ export default function StatusPengajuanPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase ${getStatusColor(item.normalizedStatus)}`}>
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase ${getStatusColor(item.normalizedStatus)}`}>
                                     {getStatusLabel(item.normalizedStatus)}
                                 </span>
                             </div>
 
                             {/* Additional Info / Amount */}
-                            <div className="pl-16">
+                            <div className="pl-[3.25rem]">
                                 {(item.type === 'uang' || item.type === 'reimbursement') && (
-                                    <p className="font-bold text-slate-900 text-base mb-1">
-                                        {formatCurrency(item.jumlah_uang)}
-                                    </p>
+                                    <div className="mb-1">
+                                        {item.normalizedStatus === 'disetujui' && item.jumlah_disetujui != null ? (
+                                            <div className="flex flex-col">
+                                                <p className="font-bold text-emerald-600 text-sm">
+                                                    {formatCurrency(item.jumlah_disetujui)}
+                                                </p>
+                                                {item.jumlah_disetujui !== item.jumlah_uang && (
+                                                    <p className="text-[10px] text-slate-400 font-medium">
+                                                        dari {formatCurrency(item.jumlah_uang)}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="font-bold text-slate-900 text-sm">
+                                                {formatCurrency(item.jumlah_uang)}
+                                            </p>
+                                        )}
+                                    </div>
                                 )}
                                 {item.type === 'barang' && item.normalizedStatus === 'ditolak' && (
                                     <div className="flex items-center gap-1 mt-1 text-red-500 mb-1">
-                                        <XCircle className="w-3.5 h-3.5" />
-                                        <span className="text-xs font-medium">Stok tidak tersedia</span>
+                                        <XCircle className="w-3 h-3" />
+                                        <span className="text-[10px] font-medium">Stok tidak tersedia</span>
                                     </div>
                                 )}
                                 <div className="flex items-start gap-1.5">
-                                    {item.type === 'izin' && <Clock className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />}
-                                    {(item.type !== 'izin' && item.alasan) && <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />}
+                                    {item.type === 'izin' && <Clock className="w-3 h-3 text-slate-400 mt-0.5 shrink-0" />}
+                                    {(item.type !== 'izin' && item.alasan) && <CheckCircle2 className="w-3 h-3 text-slate-400 mt-0.5 shrink-0" />}
                                     
-                                    <p className="text-xs text-slate-400 line-clamp-1">
+                                    <p className="text-[10px] text-slate-400 line-clamp-1">
                                         {item.alasan || item.keperluan || "Tidak ada detail"}
                                     </p>
                                 </div>
@@ -268,7 +318,7 @@ export default function StatusPengajuanPage() {
 
             {/* Detail Dialog */}
             <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>
-                <DialogContent className="sm:max-w-md bg-white rounded-3xl p-0 overflow-hidden border-none shadow-xl">
+                <DialogContent showCloseButton={false} className="sm:max-w-md bg-white rounded-3xl p-0 overflow-hidden border-none shadow-xl">
                     <DialogTitle className="sr-only">Detail Pengajuan</DialogTitle>
                     {selectedSubmission && (
                         <div>
@@ -278,9 +328,17 @@ export default function StatusPengajuanPage() {
                                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-white shadow-sm`}>
                                         {getIcon(selectedSubmission.type)}
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-white/80 backdrop-blur-sm ${getStatusColor(selectedSubmission.normalizedStatus)}`}>
-                                        {getStatusLabel(selectedSubmission.normalizedStatus)}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-white/80 backdrop-blur-sm ${getStatusColor(selectedSubmission.normalizedStatus)}`}>
+                                            {getStatusLabel(selectedSubmission.normalizedStatus)}
+                                        </span>
+                                        <button 
+                                            onClick={() => setSelectedSubmission(null)}
+                                            className="p-1.5 bg-white/60 hover:bg-white rounded-full transition-colors text-slate-500 hover:text-red-500"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
                                 </div>
                                 <h2 className="text-xl font-bold text-slate-900">
                                     {selectedSubmission.type === 'barang' ? selectedSubmission.nama_barang : 
@@ -297,8 +355,27 @@ export default function StatusPengajuanPage() {
                                 <div className="grid gap-4">
                                     {(selectedSubmission.type === 'uang' || selectedSubmission.type === 'reimbursement') && (
                                         <div className="bg-gray-50 p-4 rounded-2xl">
-                                            <p className="text-xs text-gray-500 font-medium uppercase mb-1">Total Nominal</p>
-                                            <p className="text-2xl font-bold text-slate-900">{formatCurrency(selectedSubmission.jumlah_uang)}</p>
+                                            <p className="text-xs text-gray-500 font-medium uppercase mb-1">
+                                                {selectedSubmission.normalizedStatus === 'disetujui' && selectedSubmission.jumlah_disetujui != null 
+                                                    ? 'Nominal Disetujui' 
+                                                    : 'Total Nominal'}
+                                            </p>
+                                            {selectedSubmission.normalizedStatus === 'disetujui' && selectedSubmission.jumlah_disetujui != null ? (
+                                                <div>
+                                                    <p className="text-2xl font-bold text-emerald-600">
+                                                        {formatCurrency(selectedSubmission.jumlah_disetujui)}
+                                                    </p>
+                                                    {selectedSubmission.jumlah_disetujui !== selectedSubmission.jumlah_uang && (
+                                                        <p className="text-xs text-slate-400 mt-1">
+                                                            (Dari pengajuan: {formatCurrency(selectedSubmission.jumlah_uang)})
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <p className="text-2xl font-bold text-slate-900">
+                                                    {formatCurrency(selectedSubmission.jumlah_uang)}
+                                                </p>
+                                            )}
                                         </div>
                                     )}
 
@@ -318,9 +395,24 @@ export default function StatusPengajuanPage() {
                                             <div className="flex items-start gap-3">
                                                 <Package className="w-5 h-5 text-gray-400 mt-0.5" />
                                                 <div>
-                                                    <p className="text-xs text-gray-500 font-medium uppercase">Jumlah Barang</p>
+                                                    <p className="text-xs text-gray-500 font-medium uppercase">
+                                                        {selectedSubmission.normalizedStatus === 'disetujui' && selectedSubmission.jumlah_disetujui != null 
+                                                            ? 'Jumlah Disetujui' 
+                                                            : 'Jumlah Barang'}
+                                                    </p>
                                                     <p className="text-sm text-slate-700 mt-1 font-semibold">
-                                                        {selectedSubmission.jumlah} Unit
+                                                        {selectedSubmission.normalizedStatus === 'disetujui' && selectedSubmission.jumlah_disetujui != null ? (
+                                                            <span>
+                                                                <span className="text-emerald-600 font-bold text-lg">{selectedSubmission.jumlah_disetujui} Unit</span>
+                                                                {selectedSubmission.jumlah_disetujui !== selectedSubmission.jumlah && (
+                                                                    <span className="block text-xs text-slate-400 font-normal mt-1">
+                                                                        (Dari permintaaan: {selectedSubmission.jumlah} Unit)
+                                                                    </span>
+                                                                )}
+                                                            </span>
+                                                        ) : (
+                                                            `${selectedSubmission.jumlah} Unit`
+                                                        )}
                                                     </p>
                                                 </div>
                                             </div>
@@ -356,20 +448,37 @@ export default function StatusPengajuanPage() {
 
                                 {/* Actions */}
                                 <div className="mt-6 pt-6 border-t border-gray-100 flex gap-3">
-                                    <Button 
-                                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-slate-700 font-bold rounded-xl h-12"
-                                        onClick={() => setSelectedSubmission(null)}
-                                    >
-                                        Tutup
-                                    </Button>
+                                    {/* Logic for Buttons:
+                                        If Reimbursement: Show 'Detail Struk' button instead of 'Tutup' specific for reimbursement proofs
+                                        Else: Show 'Tutup' button
+                                    */}
+                                    {selectedSubmission.type === 'reimbursement' && selectedSubmission.reimbursement_bukti_files?.length > 0 ? (
+                                        <Button 
+                                            className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-600 font-semibold rounded-2xl h-10 border border-purple-100 text-xs shadow-sm"
+                                            onClick={() => setViewingReimbursementProofs(selectedSubmission.reimbursement_bukti_files)}
+                                        >
+                                            <Receipt className="w-3.5 h-3.5 mr-2" />
+                                            Bukti Struk
+                                        </Button>
+                                    ) : (
+                                        <Button 
+                                            className="flex-1 bg-gray-50 hover:bg-gray-100 text-slate-600 font-semibold rounded-2xl h-10 border border-gray-200 text-xs"
+                                            onClick={() => setSelectedSubmission(null)}
+                                        >
+                                            Tutup
+                                        </Button>
+                                    )}
+
+                                    {/* Proof of Transfer (Admin) */}
                                     {selectedSubmission.bukti_transfer_url && (
                                         <Button 
-                                            className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl h-12 shadow-emerald-200 shadow-lg"
+                                            className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-2xl h-10 shadow-emerald-200 shadow-md text-xs"
                                             onClick={() => {
                                                 setViewingProof(selectedSubmission.bukti_transfer_url);
                                             }}
                                         >
-                                            Lihat Bukti
+                                            <FileImage className="w-3.5 h-3.5 mr-2" />
+                                            Bukti Transfer
                                         </Button>
                                     )}
                                 </div>
@@ -379,14 +488,14 @@ export default function StatusPengajuanPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Proof Modal (Separate to show on top of details or standalone) */}
+            {/* Transfer Proof Modal */}
             <Dialog open={!!viewingProof} onOpenChange={() => setViewingProof(null)}>
-                <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-transparent border-none shadow-none z-50">
+                <DialogContent showCloseButton={false} className="sm:max-w-md p-0 overflow-hidden bg-transparent border-none shadow-none z-50">
                     <DialogTitle className="sr-only">Bukti Transfer</DialogTitle>
                      <div className="bg-white rounded-3xl p-4 m-4 shadow-2xl">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-slate-800">Bukti Transfer</h3>
-                            <button onClick={() => setViewingProof(null)} className="p-1 bg-gray-100 rounded-full">
+                            <button onClick={() => setViewingProof(null)} className="p-1 bg-gray-100 rounded-full hover:bg-gray-200">
                                 <XCircle className="w-6 h-6 text-gray-400" />
                             </button>
                         </div>
@@ -397,6 +506,48 @@ export default function StatusPengajuanPage() {
                                 <img src={currentSignedUrl} alt="Proof" className="w-full h-auto object-contain" />
                             ) : (
                                 <p className="text-xs text-gray-400">Gagal memuat gambar</p>
+                            )}
+                        </div>
+                     </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Reimbursement Proofs Modal */}
+            <Dialog open={!!viewingReimbursementProofs} onOpenChange={() => setViewingReimbursementProofs(null)}>
+                 <DialogContent showCloseButton={false} className="sm:max-w-lg p-0 overflow-hidden bg-transparent border-none shadow-none z-50">
+                    <DialogTitle className="sr-only">Bukti Reimbursement</DialogTitle>
+                     <div className="bg-white rounded-3xl p-4 m-4 shadow-2xl max-h-[80vh] overflow-y-auto custom-scrollbar">
+                        <div className="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 py-2 border-b border-gray-100">
+                            <h3 className="font-bold text-slate-800">Bukti Reimbursement</h3>
+                            <button onClick={() => setViewingReimbursementProofs(null)} className="p-1 bg-gray-100 rounded-full hover:bg-gray-200">
+                                <XCircle className="w-6 h-6 text-gray-400" />
+                            </button>
+                        </div>
+                        
+                        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory no-scrollbar">
+                            {loadingImage ? (
+                                <div className="h-40 w-full flex items-center justify-center bg-gray-50 rounded-2xl">
+                                    <span className="loading loading-spinner text-purple-500"></span>
+                                </div>
+                            ) : reimbursementSignedUrls.length > 0 ? (
+                                reimbursementSignedUrls.map((file, idx) => (
+                                    <div key={idx} className="min-w-[260px] max-w-[260px] space-y-2 snap-center">
+                                        <div className="rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 aspect-[3/4] relative">
+                                            {/* Heuristic for images vs pdf based on primitive extension check from server or just assuming image for now if not implemented pdf viewer */}
+                                            {file.url && (
+                                                <img 
+                                                    src={file.url} 
+                                                    alt={`Bukti ${idx+1}`} 
+                                                    className="w-full h-full object-cover" 
+                                                    loading="lazy"
+                                                />
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-center text-gray-400 font-mono truncate px-2">{file.name}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-center text-gray-400 py-10">Tidak ada bukti yang dapat ditampilkan</p>
                             )}
                         </div>
                      </div>
