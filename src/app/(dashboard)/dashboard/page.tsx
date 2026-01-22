@@ -233,7 +233,7 @@ export default function DashboardPage() {
                                 rounded-xl px-6 h-11 shadow-lg transition-all active:scale-95
                                 ${attendanceStatus === 'not_checked_in' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200 text-white' : ''}
                                 ${attendanceStatus === 'checked_in' ? 'bg-red-500 hover:bg-red-600 shadow-red-200 text-white' : ''}
-                                ${attendanceStatus === 'checked_out' ? 'bg-red-500 text-gray-400 shadow-none cursor-not-allowed' : ''}
+                                ${attendanceStatus === 'checked_out' ? 'bg-red-500 text-white shadow-none cursor-not-allowed' : ''}
                             `} disabled={attendanceStatus === 'checked_out'}>
                                 {attendanceStatus === 'not_checked_in' && <><ArrowRight className="w-4 h-4 mr-2" /> Masuk</>}
                                 {attendanceStatus === 'checked_in' && <><ArrowRight className="w-4 h-4 mr-2" /> Pulang</>}
