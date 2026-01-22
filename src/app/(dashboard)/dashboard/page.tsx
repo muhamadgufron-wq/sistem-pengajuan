@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useSubmissionStatus } from '@/hooks/use-submission-status';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import TextType from '@/components/react-bits/TextType';
 
 // --- Components ---
 
@@ -176,8 +177,20 @@ export default function DashboardPage() {
                         <AvatarFallback>U</AvatarFallback>
                     </Avatar>
                     <div>
-                        <h1 className="text-md font-bold text-slate-800 leading-tight">{getGreeting()}, {fullName?.split(' ')[0] || 'User'}</h1>
-                        <p className="text-xs text-slate-500 font-medium">Semangat Kerja nya ya!</p>
+                        <h1 className="text-xs font-bold text-slate-800 leading-tight">{getGreeting()}, {fullName?.split(' ')[0] || 'User'}</h1>
+                        <p className="text-xs text-slate-500 font-medium">
+                            <TextType 
+                            text={["Jangan lupa absen.", "Kalo lupa nanti ga gajian loh"]}
+                            typingSpeed={75}
+                            pauseDuration={1500}
+                            showCursor={true}
+                            cursorCharacter="_"
+                            deletingSpeed={50}
+                            variableSpeed={null}
+                            cursorBlinkDuration={0.5}
+                            loop={true}
+                        />
+                        </p>
                     </div>
                 </div>
                 <Button variant="ghost" size="icon" className="rounded-full bg-slate-50 relative">
@@ -223,7 +236,7 @@ export default function DashboardPage() {
                                 attendanceStatus === 'checked_in' ? 'text-green-600' :
                                 'text-slate-800'
                              }`}>
-                                {attendanceStatus === 'not_checked_in' && 'BelumMasuk'}
+                                {attendanceStatus === 'not_checked_in' && 'Belum Masuk'}
                                 {attendanceStatus === 'checked_in' && 'Masuk'}
                                 {attendanceStatus === 'checked_out' && 'Pulang'}
                              </h2>
