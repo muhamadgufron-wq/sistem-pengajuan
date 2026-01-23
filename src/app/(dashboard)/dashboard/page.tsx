@@ -178,7 +178,7 @@ export default function DashboardPage() {
                     </Avatar>
                     <div>
                         <h1 className="text-xs font-bold text-slate-800 leading-tight">{getGreeting()}, {fullName?.split(' ')[0] || 'User'}</h1>
-                        <p className="text-xs text-slate-500 font-medium">
+                        <div className="text-xs text-slate-500 font-medium">
                             <TextType 
                             text={["Jangan lupa absen.", "Kalo lupa nanti ga gajian loh"]}
                             typingSpeed={75}
@@ -190,7 +190,7 @@ export default function DashboardPage() {
                             cursorBlinkDuration={0.5}
                             loop={true}
                         />
-                        </p>
+                        </div>
                     </div>
                 </div>
                 <Button variant="ghost" size="icon" className="rounded-full bg-slate-50 relative">

@@ -16,11 +16,12 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check camera support
     if (!isCameraSupported()) {
-      toast.error('Browser Anda tidak mendukung akses kamera');
+      setError('Browser Anda tidak mendukung akses kamera');
       return;
     }
 
@@ -46,12 +47,13 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
     if (!videoRef.current) return;
 
     setIsLoading(true);
+    setError(null);
     try {
       const mediaStream = await startCamera(videoRef.current);
       setStream(mediaStream);
-    } catch (error) {
-      console.error('Camera error:', error);
-      // Don't show toast - camera failure is already indicated by disabled button
+    } catch (err) {
+      console.error('Camera error:', err);
+      setError(err instanceof Error ? err.message : 'Gagal mengakses kamera. Pastikan izin diberikan.');
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +88,16 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
 
   return (
     <div className="space-y-4">
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm mb-4">
+           {error}
+           <div className="mt-2 text-xs text-red-500">
+               Pastikan Anda memberikan izin akses kamera di browser.
+           </div>
+        </div>
+      )}
+
       {/* Camera Preview or Captured Photo */}
       <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
         {!capturedPhoto ? (
@@ -103,6 +115,19 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
                 <div className="text-white">Membuka kamera...</div>
               </div>
             )}
+             {!isLoading && !stream && !error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                   <div className="text-white text-sm text-center px-4">
+                     Menunggu kamera...<br/>
+                     <span className="text-xs text-gray-400">Jika tidak muncul, muat ulang halaman.</span>
+                   </div>
+                </div>
+            )}
+            {error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+                   <div className="text-red-400 text-3xl font-bold">📷🚫</div>
+                </div>
+            )}
           </>
         ) : (
           <img
@@ -114,7 +139,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
         )}
 
         {/* Camera Guide Overlay */}
-        {!capturedPhoto && !isLoading && (
+        {!capturedPhoto && !isLoading && !error && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="border-2 border-white/50 rounded-full w-48 h-48" />
           </div>
@@ -123,11 +148,11 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
 
       {/* Instructions */}
       <div className="text-center text-sm text-muted-foreground">
-        {!capturedPhoto ? (
+        {!capturedPhoto && !error ? (
           <p>📸 Posisikan wajah Anda di dalam lingkaran</p>
-        ) : (
+        ) : capturedPhoto ? (
           <p>✅ Foto berhasil diambil. Periksa kembali sebelum melanjutkan.</p>
-        )}
+        ) : null}
       </div>
 
       {/* Action Buttons */}
@@ -144,7 +169,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
             </Button>
             <Button
               onClick={handleCapturePhoto}
-              disabled={isLoading || !stream}
+              disabled={isLoading || !stream || !!error}
               className="flex-1"
             >
               <Camera className="mr-2 h-4 w-4" />
