@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -34,6 +34,7 @@ export default function AjukanReimbursementPage() {
     const [files, setFiles] = useState<File[]>([]);
     
     const [isLoading, setIsLoading] = useState(false);
+    const [minLoading, setMinLoading] = useState(true);
     const { isOpen, isLoading: isStatusLoading } = useSubmissionStatus();
 
     const formatNumber = (value: string) => {
@@ -49,6 +50,13 @@ export default function AjukanReimbursementPage() {
       const formattedValue = formatNumber(rawValue);
       setDisplayValue(formattedValue);
     };
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setMinLoading(false);
+        }, 800);
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -152,7 +160,7 @@ export default function AjukanReimbursementPage() {
         }
     };
 
-    if (isStatusLoading) {
+    if (isStatusLoading || minLoading) {
         return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
     }
 

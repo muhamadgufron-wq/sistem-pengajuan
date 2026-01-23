@@ -29,6 +29,16 @@ export default function AjukanIzinPage() {
   const [alasan, setAlasan] = useState('');
   const [buktiFile, setBuktiFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [minLoading, setMinLoading] = useState(true);
+
+  // Minimum loading timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        setMinLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -38,6 +48,7 @@ export default function AjukanIzinPage() {
       } else { 
         setUser(user as User); 
       }
+      setIsPageLoading(false);
     };
     checkUser();
   }, [router, supabase.auth]);
@@ -146,6 +157,10 @@ export default function AjukanIzinPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (isPageLoading || minLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
+  }
 
   return (
     <div className="min-h-screen bg-white text-slate-800 font-sans">

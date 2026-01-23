@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -22,12 +22,20 @@ export default function AjukanBarangPage() {
   const [jumlah, setJumlah] = useState(1);
   const [alasan, setAlasan] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [minLoading, setMinLoading] = useState(true);
   
   const { isOpen, isLoading: isStatusLoading } = useSubmissionStatus();
 
   // Helper to increment/decrement
   const handleIncrement = () => setJumlah(prev => prev + 1);
   const handleDecrement = () => setJumlah(prev => (prev > 1 ? prev - 1 : 1));
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +94,7 @@ export default function AjukanBarangPage() {
     }
   };
 
-  if (isStatusLoading) {
+  if (isStatusLoading || minLoading) {
     return <div className="min-h-screen flex items-center justify-center"><LoadingSpinner /></div>;
   }
 

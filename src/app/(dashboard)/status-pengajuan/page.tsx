@@ -21,6 +21,7 @@ import {
     X,
     FileImage
 } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 
 const CATEGORIES = [
@@ -38,6 +39,7 @@ export default function StatusPengajuanPage() {
     // Data State
     const [submissions, setSubmissions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [minLoading, setMinLoading] = useState(true);
     
     // Filter State
     const [activeCategory, setActiveCategory] = useState('all');
@@ -76,6 +78,11 @@ export default function StatusPengajuanPage() {
             setIsLoading(false);
         };
         fetchData();
+
+        const timer = setTimeout(() => {
+            setMinLoading(false);
+        }, 800);
+        return () => clearTimeout(timer);
     }, [supabase, router]);
 
     // Helper functions
@@ -215,8 +222,8 @@ export default function StatusPengajuanPage() {
 
             {/* Content */}
             <div className="p-6 pb-24 max-w-xl mx-auto space-y-4">
-                {isLoading ? (
-                    <div className="flex justify-center p-8"><span className="loading loading-dots loading-lg text-emerald-500"></span></div>
+                {isLoading || minLoading ? (
+                    <div className="flex justify-center p-8"><LoadingSpinner /></div>
                 ) : filteredSubmissions.length > 0 ? (
                     filteredSubmissions.map((item) => (
                         <div 

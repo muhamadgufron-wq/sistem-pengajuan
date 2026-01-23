@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { FileText, ExternalLink } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 const StatusBadge = ({ status }: { status: string }) => {
     let statusClasses = "";
@@ -43,6 +44,7 @@ export default function AdminPengajuanIzinPage() {
     
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [minLoading, setMinLoading] = useState(true);
     
     // Dialog states
     const [editingItem, setEditingItem] = useState<LeaveRequest | null>(null);
@@ -50,6 +52,14 @@ export default function AdminPengajuanIzinPage() {
     const [adminNote, setAdminNote] = useState('');
     const [viewingItem, setViewingItem] = useState<LeaveRequest | null>(null);
     const [buktiItem, setBuktiItem] = useState<LeaveRequest | null>(null);
+
+    // Minimum loading duration logic
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setMinLoading(false);
+        }, 800);
+        return () => clearTimeout(timer);
+    }, []);
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -335,9 +345,11 @@ export default function AdminPengajuanIzinPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isLoading ? ( 
+                                {isLoading || minLoading ? ( 
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center px-6 py-4">Memuat...</TableCell>
+                                        <TableCell colSpan={6} className="h-64 text-center px-6 py-4">
+                                            <LoadingSpinner />
+                                        </TableCell>
                                     </TableRow> 
                                 ) : leaveRequests.length === 0 ? ( 
                                     <TableRow>

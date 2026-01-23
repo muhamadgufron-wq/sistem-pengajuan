@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 import { toast } from 'sonner';
 import { 
     FileCheck, 
@@ -86,6 +87,7 @@ export default function DashboardPage() {
     
     // Gunakan static date agar tidak hydration mismatch time, tapi update di client
     const [mounted, setMounted] = useState(false);
+    const [minLoading, setMinLoading] = useState(true);
 
     const { isOpen: isSubmissionOpen } = useSubmissionStatus();
 
@@ -94,7 +96,16 @@ export default function DashboardPage() {
     useEffect(() => {
         setMounted(true);
         const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60); // update every minute
-        return () => clearInterval(timer);
+        
+        // Enforce minimum loading time of 800ms
+        const loadingTimer = setTimeout(() => {
+            setMinLoading(false);
+        }, 800);
+
+        return () => {
+            clearInterval(timer);
+            clearTimeout(loadingTimer);
+        };
     }, []);
 
     useEffect(() => {
@@ -146,9 +157,14 @@ export default function DashboardPage() {
         router.push('/login');
     };
 
-    if (!user || isRedirecting || !mounted) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-50">Memuat...</div>;
+    if (!user || isRedirecting || !mounted || minLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <LoadingSpinner />
+            </div>
+        );
     }
+
 
     // Format Date: Monday, 24 May 2024
     const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -177,7 +193,7 @@ export default function DashboardPage() {
                         <AvatarFallback>U</AvatarFallback>
                     </Avatar>
                     <div>
-                        <h1 className="text-xs font-bold text-slate-800 leading-tight">{getGreeting()}, {fullName?.split(' ')[0] || 'User'}</h1>
+                        <h1 className="text-sm font-bold text-slate-800 leading-tight">{getGreeting()}, {fullName?.split(' ')[0] || 'User'}</h1>
                         <div className="text-xs text-slate-500 font-medium">
                             <TextType 
                             text={["Jangan lupa absen.", "Kalo lupa nanti ga gajian loh"]}

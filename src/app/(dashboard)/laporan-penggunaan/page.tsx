@@ -50,6 +50,7 @@ export default function LaporanPenggunaanPage() {
   const [pengajuanList, setPengajuanList] = useState<PengajuanUang[]>([]);
   const [selectedPengajuan, setSelectedPengajuan] = useState<PengajuanUang | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [minLoading, setMinLoading] = useState(true);
 
   // Upload State
   const [files, setFiles] = useState<File[]>([]);
@@ -63,6 +64,10 @@ export default function LaporanPenggunaanPage() {
   // Initial Fetch
   useEffect(() => {
     fetchData();
+    const timer = setTimeout(() => {
+        setMinLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchData = async () => {
@@ -257,7 +262,7 @@ export default function LaporanPenggunaanPage() {
 
       {/* List */}
       <div className="p-4 space-y-4 flex-1">
-        {isLoading ? (
+        {isLoading || minLoading ? (
           <div className="flex justify-center py-8"><LoadingSpinner /></div>
         ) : filteredList.length === 0 ? (
           <div className="text-center py-12 text-gray-500">Belum ada pengajuan</div>
