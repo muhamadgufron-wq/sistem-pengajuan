@@ -107,8 +107,13 @@ export default function AjukanReimbursementPage() {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Gagal membuat reimbursement');
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Gagal membuat reimbursement');
+                } else {
+                     throw new Error('Gagal membuat reimbursement: Terjadi kesalahan server.');
+                }
             }
 
             const { data: reimbursement } = await response.json();
@@ -126,8 +131,16 @@ export default function AjukanReimbursementPage() {
             });
 
             if (!uploadResponse.ok) {
-                const error = await uploadResponse.json();
-                throw new Error(error.error || 'Gagal upload bukti');
+                 const contentType = uploadResponse.headers.get('content-type');
+                 if (contentType && contentType.includes('application/json')) {
+                     const error = await uploadResponse.json();
+                     throw new Error(error.error || 'Gagal upload bukti');
+                 } else {
+                     const text = await uploadResponse.text();
+                     console.error('Upload failed with non-JSON response:', text);
+                     // Very likely a 413 Payload Too Large or 504 Gateway Timeout if it's not JSON
+                     throw new Error('Gagal upload bukti: Terjadi kesalahan server (kemungkinan ukuran file terlalu besar).');
+                 }
             }
 
             const uploadResult = await uploadResponse.json();

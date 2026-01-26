@@ -2,8 +2,9 @@
 
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Upload, FileImage, File } from "lucide-react";
+import { X, Upload, FileImage, File as FileIcon } from "lucide-react";
 import { toast } from "sonner";
+import { compressImage } from "@/lib/utils/image-compression";
 
 interface MultiFileUploadProps {
   onFilesChange: (files: File[]) => void;
@@ -60,18 +61,32 @@ export default function MultiFileUpload({
     const newPreviews: { [key: string]: string } = { ...previews };
 
     for (const file of fileArray) {
-      const error = validateFile(file);
+      let fileToProcess = file;
+      
+      // Compress if image
+      if (file.type.startsWith('image/')) {
+        try {
+          const loadingToast = toast.loading(`Mengompres gambar ${file.name}...`);
+          fileToProcess = await compressImage(file);
+          toast.dismiss(loadingToast);
+        } catch (error) {
+          console.error("Compression failed:", error);
+          toast.error(`Gagal mengompres ${file.name}, menggunakan file asli.`);
+        }
+      }
+
+      const error = validateFile(fileToProcess);
       if (error) {
         toast.error(error);
         continue;
       }
 
-      validFiles.push(file);
+      validFiles.push(fileToProcess);
 
       // Generate preview for images
-      const preview = await generatePreview(file);
+      const preview = await generatePreview(fileToProcess);
       if (preview) {
-        newPreviews[file.name] = preview;
+        newPreviews[fileToProcess.name] = preview;
       }
     }
 
@@ -174,7 +189,7 @@ export default function MultiFileUpload({
                       className="w-full h-full object-cover"
                     />
                   ) : file.type === "application/pdf" ? (
-                    <File className="w-6 h-6 text-red-500" />
+                    <FileIcon className="w-6 h-6 text-red-500" />
                   ) : (
                     <FileImage className="w-6 h-6 text-gray-400" />
                   )}
