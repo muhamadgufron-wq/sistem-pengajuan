@@ -116,18 +116,33 @@ export default function AbsensiPage() {
       }
 
       // Fetch today's attendance
-      const { data: todayData, error: todayError } = await supabase
-        .from("absensi")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("tanggal", getTodayDate())
-        .single();
-
-      if (todayError && todayError.code !== "PGRST116") {
-        console.error("Error fetching today attendance:", todayError);
+      // If we have incomplete attendance from yesterday and it's still early morning (before 6 AM),
+      // treat it as today's active attendance (overnight shift)
+      const currentHour = new Date().getHours();
+      const isEarlyMorning = currentHour < 6;
+      
+      let todayData = null;
+      
+      if (incompleteData && isEarlyMorning) {
+        // Use yesterday's incomplete attendance as today's active attendance
+        todayData = incompleteData;
       } else {
-        setTodayAttendance(todayData);
+        // Fetch actual today's attendance
+        const { data, error: todayError } = await supabase
+          .from("absensi")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("tanggal", getTodayDate())
+          .single();
+
+        if (todayError && todayError.code !== "PGRST116") {
+          console.error("Error fetching today attendance:", todayError);
+        } else {
+          todayData = data;
+        }
       }
+      
+      setTodayAttendance(todayData);
 
       // Fetch monthly stats with custom period (21st prev month - 20th current month)
       const now = new Date();

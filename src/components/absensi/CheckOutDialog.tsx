@@ -128,14 +128,47 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
         updated_at: new Date().toISOString(),
       };
 
-      // Determine date to update
-            const targetDate = attendanceDate || getTodayDate();
+      // Determine which record to update
+      let updateError;
+      
+      if (isPastCheckout && attendanceDate) {
+        // For past checkout (susulan), update by specific date
+        const { error } = await supabase
+          .from('absensi')
+          .update(updates)
+          .eq('user_id', user.id)
+          .eq('tanggal', attendanceDate);
+        updateError = error;
+      } else {
+        // For current checkout, find the most recent incomplete record (within last 48 hours)
+        // This handles overnight shifts where checkout happens after midnight
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        const twoDaysAgoStr = twoDaysAgo.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+        
+        // First, get the incomplete record
+        const { data: incompleteRecord, error: fetchError } = await supabase
+          .from('absensi')
+          .select('id, tanggal')
+          .eq('user_id', user.id)
+          .is('check_out_time', null)
+          .not('check_in_time', 'is', null)
+          .gte('tanggal', twoDaysAgoStr)
+          .order('check_in_time', { ascending: false })
+          .limit(1)
+          .single();
 
-      const { error: updateError } = await supabase
-        .from('absensi')
-        .update(updates)
-        .eq('user_id', user.id)
-        .eq('tanggal', targetDate);
+        if (fetchError || !incompleteRecord) {
+          updateError = fetchError || new Error('Tidak ditemukan record absensi yang belum checkout');
+        } else {
+          // Update the found record
+          const { error } = await supabase
+            .from('absensi')
+            .update(updates)
+            .eq('id', incompleteRecord.id);
+          updateError = error;
+        }
+      }
 
       if (updateError) {
         toast.error('Gagal melakukan absen pulang: ' + updateError.message);
