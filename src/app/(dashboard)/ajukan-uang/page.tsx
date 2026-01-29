@@ -104,7 +104,7 @@ export default function AjukanUangPage() {
             router.push('/dashboard');
 
         } catch (error: any) {
-            alert.error("Gagal Mengirim", { description: error.message });
+            alert.error("Gagal Mengirim", error.message );
         } finally {
             setIsLoading(false);
         }

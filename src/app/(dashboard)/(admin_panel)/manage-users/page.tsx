@@ -56,7 +56,7 @@ export default function ManageUsersPage() {
     setIsLoading(true);
     const { data, error } = await supabase.from('user_profiles_with_email').select('*');
     if (error) {
-      alert.error("Gagal mengambil data user", { description: error.message });
+      alert.error("Gagal mengambil data user", error.message );
     } else {
       setUsers(data || []);
     }
@@ -70,7 +70,7 @@ export default function ManageUsersPage() {
 
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
       if (!profile || profile.role !== 'superadmin') {
-        alert.error("Akses Ditolak", { description: "Hanya superadmin yang dapat mengakses halaman ini." });
+        alert.error("Akses Ditolak", "Hanya superadmin yang dapat mengakses halaman ini." );
         router.push('/dashboard');
         return;
       }
@@ -96,9 +96,9 @@ export default function ManageUsersPage() {
 
     const data = await res.json();
     if (!data.success) {
-      alert.error("Gagal Mengundang User", { description: data.message || "Terjadi kesalahan." });
+      alert.error("Gagal Mengundang User", data.message || "Terjadi kesalahan." );
     } else {
-      alert.success("Undangan Terkirim!", { description: data.message });
+      alert.success("Undangan Terkirim!", data.message );
       setInviteEmail('');
       setInviteFullName('');
       setInviteRole('karyawan');
@@ -120,7 +120,7 @@ export default function ManageUsersPage() {
 
     const data = await res.json();
     if (!data.success) {
-        alert.error("Gagal menghapus user", { description: data.message });
+        alert.error("Gagal menghapus user", data.message );
     } else {
         alert.success("User berhasil dihapus sepenuhnya!");
         fetchUsers();
@@ -166,7 +166,7 @@ export default function ManageUsersPage() {
 
       if (!data.success) {
       // Ini jika API route Anda mengembalikan { success: false }
-      alert.error("Gagal memperbarui data user", { description: data.message });
+      alert.error("Gagal memperbarui data user", data.message );
       } else {
       alert.success("Data user berhasil diperbarui!");
       fetchUsers();
@@ -175,7 +175,7 @@ export default function ManageUsersPage() {
       } catch (error: any) {
       // Ini akan menangkap error fetch, 500, atau res.json()
       console.error('Error di handleUpdateUser:', error); // [LOG 4]
-      alert.error("Terjadi Kesalahan Fatal", { description: error.message });
+      alert.error("Terjadi Kesalahan Fatal", error.message );
       } finally {
       setIsUpdating(false); // Matikan loading
       }

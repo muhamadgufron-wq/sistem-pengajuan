@@ -221,7 +221,7 @@ export default function ReportsPage() {
         details,
       });
     } catch (error: any) {
-      alert.error("Gagal Membuat Laporan", { description: error.message });
+      alert.error("Gagal Membuat Laporan", error.message );
     } finally {
       setIsLoading(false);
     }

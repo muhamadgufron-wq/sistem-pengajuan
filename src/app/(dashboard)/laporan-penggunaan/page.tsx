@@ -188,7 +188,7 @@ export default function LaporanPenggunaanPage() {
       setView('list');
 
     } catch (error: any) {
-      alert.error('Gagal mengunggah bukti', { description: error.message });
+      alert.error('Gagal mengunggah bukti', error.message );
     } finally {
       setIsUploading(false);
     }

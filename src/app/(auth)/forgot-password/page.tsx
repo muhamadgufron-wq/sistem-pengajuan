@@ -29,11 +29,10 @@ export default function LupaPasswordPage() {
     });
 
     if (error) {
-      alert.error("Gagal Mengirim Email", { description: error.message });
+      alert.error("Gagal Mengirim Email", error.message );
     } else {
-      alert.success("Email Terkirim!", { 
-        description: "Silakan cek inbox Anda untuk link reset password." 
-      });
+      alert.success("Email Terkirim!", "Silakan cek inbox Anda untuk link reset password." 
+      );
       setIsSent(true); // Tampilkan pesan sukses
     }
     setIsLoading(false);

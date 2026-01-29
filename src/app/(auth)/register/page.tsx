@@ -30,12 +30,11 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      alert.error("Pendaftaran Gagal", { description: error.message });
+      alert.error("Pendaftaran Gagal", error.message );
       setIsLoading(false); // Selesai loading jika gagal
     } else {
-      alert.success("Pendaftaran Berhasil!", { 
-        description: "Silakan cek email Anda untuk verifikasi." 
-      });
+      alert.success("Pendaftaran Berhasil!", "Silakan cek email Anda untuk verifikasi." 
+      );
       setFullName('');
       setEmail('');
       setPassword('');

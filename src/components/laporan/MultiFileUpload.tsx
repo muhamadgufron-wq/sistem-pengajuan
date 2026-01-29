@@ -40,9 +40,10 @@ export default function MultiFileUpload({
     // Validate total file count
     const totalFiles = files.length + existingFiles.length + acceptedFiles.length;
     if (totalFiles > MAX_FILES) {
-      alert.error(`Maksimal ${MAX_FILES} file`, {
-        description: `Anda sudah memiliki ${existingFiles.length} file. Hanya bisa upload ${MAX_FILES - existingFiles.length - files.length} file lagi.`
-      });
+      alert.error(
+        `Maksimal ${MAX_FILES} file`,
+        `Anda sudah memiliki ${existingFiles.length} file. Hanya bisa upload ${MAX_FILES - existingFiles.length - files.length} file lagi.`
+      );
       return;
     }
 
@@ -53,17 +54,19 @@ export default function MultiFileUpload({
     acceptedFiles.forEach(file => {
       // Check file type
       if (!ALLOWED_TYPES.includes(file.type)) {
-        alert.error(`File ${file.name} ditolak`, {
-          description: 'Hanya file gambar (JPG, PNG, WebP) yang diperbolehkan'
-        });
+        alert.error(
+          `File ${file.name} ditolak`,
+          'Hanya file gambar (JPG, PNG, WebP) yang diperbolehkan'
+        );
         return;
       }
 
       // Check file size
       if (file.size > MAX_FILE_SIZE) {
-        alert.error(`File ${file.name} terlalu besar`, {
-          description: `Ukuran maksimal 5MB. File ini ${(file.size / 1024 / 1024).toFixed(2)}MB`
-        });
+        alert.error(
+          `File ${file.name} terlalu besar`,
+          `Ukuran maksimal 5MB. File ini ${(file.size / 1024 / 1024).toFixed(2)}MB`
+        );
         return;
       }
 
@@ -127,9 +130,10 @@ export default function MultiFileUpload({
         throw new Error(result.error || 'Upload failed');
       }
 
-      alert.success('Upload berhasil!', {
-        description: result.message
-      });
+      alert.success(
+        'Upload berhasil!',
+        result.message
+      );
 
       // Show errors if any
       if (result.errors && result.errors.length > 0) {
@@ -150,9 +154,10 @@ export default function MultiFileUpload({
 
     } catch (error: any) {
       console.error('Upload error:', error);
-      alert.error('Upload gagal', {
-        description: error.message
-      });
+      alert.error(
+        'Upload gagal',
+        error.message
+      );
     } finally {
       setIsUploading(false);
       setUploadProgress(0);

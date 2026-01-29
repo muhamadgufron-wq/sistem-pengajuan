@@ -24,9 +24,8 @@ export default function ResetPasswordPage() {
     // di URL (#access_token=...) dan memicu event PASSWORD_RECOVERY
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
-        alert.success("Token terverifikasi!", {
-          description: "Anda sekarang dapat mengatur password baru."
-        });
+        alert.success("Token terverifikasi!", "Anda sekarang dapat mengatur password baru."
+        );
       }
     });
 
@@ -51,11 +50,10 @@ export default function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      alert.error("Reset Gagal", { description: error.message });
+      alert.error("Reset Gagal", error.message );
     } else {
-      alert.success("Password Berhasil Diperbarui!", {
-        description: "Anda akan diarahkan ke halaman login."
-      });
+      alert.success("Password Berhasil Diperbarui!", "Anda akan diarahkan ke halaman login."
+      );
       setTimeout(() => {
         router.push('/login');
       }, 2000);

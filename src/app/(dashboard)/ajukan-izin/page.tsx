@@ -141,7 +141,7 @@ export default function AjukanIzinPage() {
         });
 
       if (error) {
-        alert.error("Gagal Mengajukan", { description: error.message });
+        alert.error("Gagal Mengajukan", error.message );
       } else {
         alert.success("Pengajuan Izin Berhasil Dikirim!");
         setJenis('');
@@ -152,7 +152,7 @@ export default function AjukanIzinPage() {
         router.push('/dashboard');
       }
     } catch (error: any) {
-      alert.error("Terjadi kesalahan", { description: error.message });
+      alert.error("Terjadi kesalahan", error.message );
     } finally {
       setIsSubmitting(false);
     }

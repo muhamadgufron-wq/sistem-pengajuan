@@ -68,7 +68,7 @@ export default function MultiFileUpload({
         try {
           const loadingToast = alert.loading(`Mengompres gambar ${file.name}...`);
           fileToProcess = await compressImage(file);
-          .close(loadingToast);
+          loadingToast.close();
         } catch (error) {
           console.error("Compression failed:", error);
           alert.error(`Gagal mengompres ${file.name}, menggunakan file asli.`);

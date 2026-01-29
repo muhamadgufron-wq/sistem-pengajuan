@@ -46,7 +46,7 @@ export default function DataKaryawanPage() {
         setEmployees(data.data);
         setFilteredEmployees(data.data);
       } else {
-        alert.error("Gagal mengambil data", { description: data.message });
+        alert.error("Gagal mengambil data", data.message );
       }
     } catch (error) {
        console.error("Fetch error:", error);

@@ -76,7 +76,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, onSuccess }
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      alert.error('Gagal update', { description: error.message });
+      alert.error('Gagal update', error.message );
     } finally {
       setIsLoading(false);
     }

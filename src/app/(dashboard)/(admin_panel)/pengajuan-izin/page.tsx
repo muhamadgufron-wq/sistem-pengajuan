@@ -74,7 +74,7 @@ export default function AdminPengajuanIzinPage() {
         const { data, error } = await supabase.rpc('v2_get_all_leave_requests', rpcParams);
         
         if (error) {
-            alert.error("Error fetching data", { description: error.message });
+            alert.error("Error fetching data", error.message );
         }
         
         setLeaveRequests(data || []);
@@ -119,7 +119,7 @@ export default function AdminPengajuanIzinPage() {
             .eq('id', editingItem.id);
 
         if (error) { 
-            alert.error("Update Gagal", { description: error.message }); 
+            alert.error("Update Gagal", error.message ); 
         } else {
             alert.success("Update Berhasil");
             setEditingItem(null);

@@ -276,15 +276,13 @@ export default function AdminPage() {
     fetchCounts();
 
     if (barangError)
-      alert.error("Error fetching barang", {
-        description: barangError.message,
-      });
+      alert.error("Error fetching barang", barangError.message,
+      );
     if (uangError)
-      alert.error("Error fetching uang", { description: uangError.message });
+      alert.error("Error fetching uang", uangError.message );
     if (reimbursementError)
-      alert.error("Error fetching reimbursement", { 
-        description: reimbursementError.message 
-      });
+      alert.error("Error fetching reimbursement", reimbursementError.message 
+      );
 
     // Collect user IDs from all sources including reimbursement
     const allUserIds = new Set<string>();
@@ -447,9 +445,8 @@ export default function AdminPage() {
         }
       } catch (error) {
         setIsUploading(false);
-        alert.error('Gagal upload bukti transfer', { 
-          description: error instanceof Error ? error.message : 'Terjadi kesalahan' 
-        });
+        alert.error('Gagal upload bukti transfer', error instanceof Error ? error.message : 'Terjadi kesalahan' 
+        );
         return;
       }
       setIsUploading(false);
@@ -461,7 +458,7 @@ export default function AdminPage() {
       .eq("id", editingItem.id);
 
     if (error) {
-      alert.error("Update Gagal", { description: error.message });
+      alert.error("Update Gagal", error.message );
     } else {
       alert.success("Update Berhasil");
       setEditingItem(null);

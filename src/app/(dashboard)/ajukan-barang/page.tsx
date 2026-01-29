@@ -88,7 +88,7 @@ export default function AjukanBarangPage() {
       router.push('/dashboard'); 
 
     } catch (error: any) {
-      alert.error("Gagal Mengajukan", { description: error.message });
+      alert.error("Gagal Mengajukan", error.message );
     } finally {
       setIsLoading(false);
     }
