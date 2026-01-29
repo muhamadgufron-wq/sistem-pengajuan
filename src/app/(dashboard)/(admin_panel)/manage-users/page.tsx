@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -56,7 +56,7 @@ export default function ManageUsersPage() {
     setIsLoading(true);
     const { data, error } = await supabase.from('user_profiles_with_email').select('*');
     if (error) {
-      toast.error("Gagal mengambil data user", { description: error.message });
+      alert.error("Gagal mengambil data user", { description: error.message });
     } else {
       setUsers(data || []);
     }
@@ -70,7 +70,7 @@ export default function ManageUsersPage() {
 
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
       if (!profile || profile.role !== 'superadmin') {
-        toast.error("Akses Ditolak", { description: "Hanya superadmin yang dapat mengakses halaman ini." });
+        alert.error("Akses Ditolak", { description: "Hanya superadmin yang dapat mengakses halaman ini." });
         router.push('/dashboard');
         return;
       }
@@ -96,9 +96,9 @@ export default function ManageUsersPage() {
 
     const data = await res.json();
     if (!data.success) {
-      toast.error("Gagal Mengundang User", { description: data.message || "Terjadi kesalahan." });
+      alert.error("Gagal Mengundang User", { description: data.message || "Terjadi kesalahan." });
     } else {
-      toast.success("Undangan Terkirim!", { description: data.message });
+      alert.success("Undangan Terkirim!", { description: data.message });
       setInviteEmail('');
       setInviteFullName('');
       setInviteRole('karyawan');
@@ -120,9 +120,9 @@ export default function ManageUsersPage() {
 
     const data = await res.json();
     if (!data.success) {
-        toast.error("Gagal menghapus user", { description: data.message });
+        alert.error("Gagal menghapus user", { description: data.message });
     } else {
-        toast.success("User berhasil dihapus sepenuhnya!");
+        alert.success("User berhasil dihapus sepenuhnya!");
         fetchUsers();
     }
     };
@@ -166,16 +166,16 @@ export default function ManageUsersPage() {
 
       if (!data.success) {
       // Ini jika API route Anda mengembalikan { success: false }
-      toast.error("Gagal memperbarui data user", { description: data.message });
+      alert.error("Gagal memperbarui data user", { description: data.message });
       } else {
-      toast.success("Data user berhasil diperbarui!");
+      alert.success("Data user berhasil diperbarui!");
       fetchUsers();
       setIsEditDialogOpen(false);
       }
       } catch (error: any) {
       // Ini akan menangkap error fetch, 500, atau res.json()
       console.error('Error di handleUpdateUser:', error); // [LOG 4]
-      toast.error("Terjadi Kesalahan Fatal", { description: error.message });
+      alert.error("Terjadi Kesalahan Fatal", { description: error.message });
       } finally {
       setIsUpdating(false); // Matikan loading
       }

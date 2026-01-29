@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -101,7 +101,7 @@ export default function LaporanPenggunaanPage() {
       setPengajuanList(requestsWithProofStatus);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Gagal memuat data');
+      alert.error('Gagal memuat data');
     } finally {
       setIsLoading(false);
     }
@@ -161,7 +161,7 @@ export default function LaporanPenggunaanPage() {
   const handleUploadSubmit = async () => {
     if (!selectedPengajuan) return;
     if (files.length === 0 && uploadedFiles.length === 0) {
-      toast.error('Mohon lampirkan bukti foto');
+      alert.error('Mohon lampirkan bukti foto');
       return;
     }
 
@@ -181,14 +181,14 @@ export default function LaporanPenggunaanPage() {
 
       if (!response.ok) throw new Error(result.error || 'Upload failed');
 
-      toast.success('Bukti berhasil diunggah');
+      alert.success('Bukti berhasil diunggah');
       
       // Refresh list to update statuses
       await fetchData();
       setView('list');
 
     } catch (error: any) {
-      toast.error('Gagal mengunggah bukti', { description: error.message });
+      alert.error('Gagal mengunggah bukti', { description: error.message });
     } finally {
       setIsUploading(false);
     }

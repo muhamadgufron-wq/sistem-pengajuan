@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,12 +63,12 @@ export default function AjukanIzinPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Ukuran file maksimal 5 MB');
+        alert.error('Ukuran file maksimal 5 MB');
         return;
       }
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
       if (!allowedTypes.includes(file.type)) {
-        toast.error('Format file harus JPG, PNG, atau PDF');
+        alert.error('Format file harus JPG, PNG, atau PDF');
         return;
       }
       setBuktiFile(file);
@@ -97,23 +97,23 @@ export default function AjukanIzinPage() {
     e.preventDefault();
     
     if (!user) {
-      toast.error("Sesi berakhir, silakan login kembali.");
+      alert.error("Sesi berakhir, silakan login kembali.");
       router.push('/login');
       return;
     }
 
     if (!jenis) {
-      toast.error("Pilih jenis izin");
+      alert.error("Pilih jenis izin");
       return;
     }
 
     if (!tanggalMulai || !tanggalSelesai) {
-      toast.error("Pilih tanggal mulai dan selesai");
+      alert.error("Pilih tanggal mulai dan selesai");
       return;
     }
 
     if (tanggalSelesai < tanggalMulai) {
-      toast.error("Tanggal selesai harus setelah atau sama dengan tanggal mulai");
+      alert.error("Tanggal selesai harus setelah atau sama dengan tanggal mulai");
       return;
     }
 
@@ -141,9 +141,9 @@ export default function AjukanIzinPage() {
         });
 
       if (error) {
-        toast.error("Gagal Mengajukan", { description: error.message });
+        alert.error("Gagal Mengajukan", { description: error.message });
       } else {
-        toast.success("Pengajuan Izin Berhasil Dikirim!");
+        alert.success("Pengajuan Izin Berhasil Dikirim!");
         setJenis('');
         setTanggalMulai(undefined);
         setTanggalSelesai(undefined);
@@ -152,7 +152,7 @@ export default function AjukanIzinPage() {
         router.push('/dashboard');
       }
     } catch (error: any) {
-      toast.error("Terjadi kesalahan", { description: error.message });
+      alert.error("Terjadi kesalahan", { description: error.message });
     } finally {
       setIsSubmitting(false);
     }

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { LayoutGrid, FileText, ClipboardCheck, Calendar, BarChart3, UserCog, Users, LogOut, Shield, User } from 'lucide-react'; 
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useEffect } from 'react';
 
@@ -166,7 +166,7 @@ export default function Sidebar({ fullName, role, isSidebarOpen, setIsSidebarOpe
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        toast.success("Anda telah berhasil logout.");
+        alert.success("Logout Berhasil", "Anda telah berhasil logout.");
         router.push('/login');
         router.refresh();
     };

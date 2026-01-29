@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -276,13 +276,13 @@ export default function AdminPage() {
     fetchCounts();
 
     if (barangError)
-      toast.error("Error fetching barang", {
+      alert.error("Error fetching barang", {
         description: barangError.message,
       });
     if (uangError)
-      toast.error("Error fetching uang", { description: uangError.message });
+      alert.error("Error fetching uang", { description: uangError.message });
     if (reimbursementError)
-      toast.error("Error fetching reimbursement", { 
+      alert.error("Error fetching reimbursement", { 
         description: reimbursementError.message 
       });
 
@@ -361,13 +361,13 @@ export default function AdminPage() {
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('File terlalu besar. Maksimal 5MB');
+      alert.error('File terlalu besar. Maksimal 5MB');
       return;
     }
 
     // Validate file type
     if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-      toast.error('File harus berupa gambar atau PDF');
+      alert.error('File harus berupa gambar atau PDF');
       return;
     }
 
@@ -421,7 +421,7 @@ export default function AdminPage() {
     if (activeTab === "uang" || activeTab === "reimbursement") {
       const finalAmount = parseFloat(approvedAmount);
       if (isNaN(finalAmount) || finalAmount < 0) {
-        toast.error("Jumlah disetujui tidak valid.");
+        alert.error("Jumlah disetujui tidak valid.");
         return;
       }
       updateData.jumlah_disetujui = finalAmount;
@@ -430,7 +430,7 @@ export default function AdminPage() {
       if (approvedQuantity && approvedQuantity.trim() !== "") {
         const finalQuantity = parseInt(approvedQuantity);
         if (isNaN(finalQuantity) || finalQuantity < 0) {
-          toast.error("Jumlah disetujui tidak valid.");
+          alert.error("Jumlah disetujui tidak valid.");
           return;
         }
         updateData.jumlah_disetujui = finalQuantity;
@@ -447,7 +447,7 @@ export default function AdminPage() {
         }
       } catch (error) {
         setIsUploading(false);
-        toast.error('Gagal upload bukti transfer', { 
+        alert.error('Gagal upload bukti transfer', { 
           description: error instanceof Error ? error.message : 'Terjadi kesalahan' 
         });
         return;
@@ -461,9 +461,9 @@ export default function AdminPage() {
       .eq("id", editingItem.id);
 
     if (error) {
-      toast.error("Update Gagal", { description: error.message });
+      alert.error("Update Gagal", { description: error.message });
     } else {
-      toast.success("Update Berhasil");
+      alert.success("Update Berhasil");
       setEditingItem(null);
       setApprovedAmount("");
       setDisplayApprovedAmount("");

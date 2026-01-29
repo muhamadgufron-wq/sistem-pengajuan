@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { CameraCapture } from './CameraCapture';
 import { createClient } from '@/lib/supabase/client';
 import { uploadAttendancePhoto, formatTime, calculateWorkDuration } from '@/lib/utils/camera';
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 import { Loader2, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -64,13 +64,13 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
 
   const handleNext = () => {
     if (!keterangan.trim()) {
-      toast.error('Mohon isi keterangan kegiatan hari ini');
+      alert.error('Keterangan Diperlukan', 'Mohon isi keterangan kegiatan hari ini');
       return;
     }
 
     if (isPastCheckout) {
       if (!manualTime) {
-        toast.error('Mohon isi jam pulang');
+        alert.error('Jam Pulang Diperlukan', 'Mohon isi jam pulang');
         return;
       }
       
@@ -80,7 +80,7 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
       checkoutDate.setHours(hours, minutes);
       
       if (checkoutDate <= checkInDate) {
-        toast.error('Jam pulang harus lebih besar dari jam masuk (' + formatTime(checkInDate) + ')');
+        alert.error('Waktu Tidak Valid', 'Jam pulang harus lebih besar dari jam masuk (' + formatTime(checkInDate) + ')');
         return;
       }
     }
@@ -99,7 +99,7 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Anda harus login terlebih dahulu');
+        alert.error('Login Diperlukan', 'Anda harus login terlebih dahulu');
         return;
       }
 
@@ -171,13 +171,14 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
       }
 
       if (updateError) {
-        toast.error('Gagal melakukan absen pulang: ' + updateError.message);
+        alert.error('Absen Pulang Gagal', 'Gagal melakukan absen pulang: ' + updateError.message);
         return;
       }
 
-      toast.success(isPastCheckout ? 'Absen pulang susulan berhasil!' : 'Absen pulang berhasil!', {
-        description: `Durasi kerja: ${workDuration}`,
-      });
+      alert.success(
+        isPastCheckout ? 'Absen pulang susulan berhasil!' : 'Absen pulang berhasil!',
+        `Durasi kerja: ${workDuration}`
+      );
 
       onSuccess();
       onOpenChange(false);
@@ -188,7 +189,7 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
       setManualTime('');
     } catch (error) {
       console.error('Pulang error:', error);
-      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan');
+      alert.error('Terjadi Kesalahan', error instanceof Error ? error.message : 'Terjadi kesalahan');
     } finally {
       setIsSubmitting(false);
     }

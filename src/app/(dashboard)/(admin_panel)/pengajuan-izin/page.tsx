@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -74,7 +74,7 @@ export default function AdminPengajuanIzinPage() {
         const { data, error } = await supabase.rpc('v2_get_all_leave_requests', rpcParams);
         
         if (error) {
-            toast.error("Error fetching data", { description: error.message });
+            alert.error("Error fetching data", { description: error.message });
         }
         
         setLeaveRequests(data || []);
@@ -119,9 +119,9 @@ export default function AdminPengajuanIzinPage() {
             .eq('id', editingItem.id);
 
         if (error) { 
-            toast.error("Update Gagal", { description: error.message }); 
+            alert.error("Update Gagal", { description: error.message }); 
         } else {
-            toast.success("Update Berhasil");
+            alert.success("Update Berhasil");
             setEditingItem(null);
             fetchData();
         }

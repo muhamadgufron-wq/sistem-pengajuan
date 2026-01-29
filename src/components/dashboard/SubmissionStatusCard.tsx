@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 
 interface SubmissionStatusCardProps {
     initialIsOpen: boolean;
@@ -23,12 +23,12 @@ export default function SubmissionStatusCard({ initialIsOpen }: SubmissionStatus
             const data = await res.json();
             if (data.success) {
                 setSubmissionOpen(checked);
-                toast.success(checked ? "Pengajuan DIBUKA" : "Pengajuan DITUTUP");
+                alert.success(checked ? "Pengajuan DIBUKA" : "Pengajuan DITUTUP");
             } else {
-                toast.error("Gagal mengubah status");
+                alert.error("Gagal mengubah status");
             }
         } catch (e) {
-            toast.error("Terjadi kesalahan sistem");
+            alert.error("Terjadi kesalahan sistem");
         } finally {
             setIsToggling(false);
         }

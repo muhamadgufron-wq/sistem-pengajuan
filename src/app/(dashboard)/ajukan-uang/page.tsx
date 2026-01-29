@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,19 +62,19 @@ export default function AjukanUangPage() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) { 
-              toast.error("Sesi berakhir, silakan login kembali."); 
+              alert.error("Sesi berakhir, silakan login kembali."); 
               router.push('/login'); 
               return; 
             }
             
             const finalBankName = namaBank === 'Lainnya' ? bankLainnya : namaBank;
             if (namaBank === 'Lainnya' && !bankLainnya) { 
-              toast.error("Harap isi nama bank lainnya."); 
+              alert.error("Harap isi nama bank lainnya."); 
               setIsLoading(false);
               return; 
             }
             if (!jumlahUang || parseInt(jumlahUang) <= 0) {
-              toast.error("Jumlah uang tidak valid.");
+              alert.error("Jumlah uang tidak valid.");
               setIsLoading(false);
               return;
             }
@@ -92,7 +92,7 @@ export default function AjukanUangPage() {
                throw new Error(error.message);
             } 
             
-            toast.success("Pengajuan Terkirim!");
+            alert.success("Pengajuan Terkirim!");
             // Reset form
             setNamaBank('BCA'); setBankLainnya(''); setNomorRekening('');
             setAtasNama(''); 
@@ -104,7 +104,7 @@ export default function AjukanUangPage() {
             router.push('/dashboard');
 
         } catch (error: any) {
-            toast.error("Gagal Mengirim", { description: error.message });
+            alert.error("Gagal Mengirim", { description: error.message });
         } finally {
             setIsLoading(false);
         }

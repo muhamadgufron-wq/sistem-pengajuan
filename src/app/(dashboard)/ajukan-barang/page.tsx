@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,19 +44,19 @@ export default function AjukanBarangPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Sesi berakhir, silakan login kembali.");
+        alert.error("Sesi berakhir, silakan login kembali.");
         router.push('/login');
         return;
       }
 
       if (!namaBarang.trim()) {
-        toast.error("Nama barang wajib diisi");
+        alert.error("Nama barang wajib diisi");
         setIsLoading(false);
         return;
       }
 
       if (!alasan.trim()) {
-        toast.error("Alasan pengajuan wajib diisi");
+        alert.error("Alasan pengajuan wajib diisi");
         setIsLoading(false);
         return;
       }
@@ -76,7 +76,7 @@ export default function AjukanBarangPage() {
         throw new Error(error.message);
       }
 
-      toast.success("Pengajuan Berhasil Dikirim!");
+      alert.success("Pengajuan Berhasil Dikirim!");
       
       // Reset form
       setNamaBarang('');
@@ -88,7 +88,7 @@ export default function AjukanBarangPage() {
       router.push('/dashboard'); 
 
     } catch (error: any) {
-      toast.error("Gagal Mengajukan", { description: error.message });
+      alert.error("Gagal Mengajukan", { description: error.message });
     } finally {
       setIsLoading(false);
     }

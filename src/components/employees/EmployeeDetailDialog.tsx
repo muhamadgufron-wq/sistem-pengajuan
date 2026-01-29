@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { EmployeeProfile } from '@/lib/types';
 
 interface EmployeeDetailDialogProps {
@@ -72,11 +72,11 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, onSuccess }
 
       if (!res.ok) throw new Error(data.message || 'Gagal update data');
       
-      toast.success('Data karyawan berhasil diperbarui');
+      alert.success('Data karyawan berhasil diperbarui');
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      toast.error('Gagal update', { description: error.message });
+      alert.error('Gagal update', { description: error.message });
     } finally {
       setIsLoading(false);
     }

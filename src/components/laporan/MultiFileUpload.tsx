@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 import { Upload, X, FileImage, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -40,7 +40,7 @@ export default function MultiFileUpload({
     // Validate total file count
     const totalFiles = files.length + existingFiles.length + acceptedFiles.length;
     if (totalFiles > MAX_FILES) {
-      toast.error(`Maksimal ${MAX_FILES} file`, {
+      alert.error(`Maksimal ${MAX_FILES} file`, {
         description: `Anda sudah memiliki ${existingFiles.length} file. Hanya bisa upload ${MAX_FILES - existingFiles.length - files.length} file lagi.`
       });
       return;
@@ -53,7 +53,7 @@ export default function MultiFileUpload({
     acceptedFiles.forEach(file => {
       // Check file type
       if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`File ${file.name} ditolak`, {
+        alert.error(`File ${file.name} ditolak`, {
           description: 'Hanya file gambar (JPG, PNG, WebP) yang diperbolehkan'
         });
         return;
@@ -61,7 +61,7 @@ export default function MultiFileUpload({
 
       // Check file size
       if (file.size > MAX_FILE_SIZE) {
-        toast.error(`File ${file.name} terlalu besar`, {
+        alert.error(`File ${file.name} terlalu besar`, {
           description: `Ukuran maksimal 5MB. File ini ${(file.size / 1024 / 1024).toFixed(2)}MB`
         });
         return;
@@ -101,7 +101,7 @@ export default function MultiFileUpload({
 
   const handleUpload = async () => {
     if (files.length === 0) {
-      toast.error('Pilih file terlebih dahulu');
+      alert.error('Pilih file terlebih dahulu');
       return;
     }
 
@@ -127,14 +127,14 @@ export default function MultiFileUpload({
         throw new Error(result.error || 'Upload failed');
       }
 
-      toast.success('Upload berhasil!', {
+      alert.success('Upload berhasil!', {
         description: result.message
       });
 
       // Show errors if any
       if (result.errors && result.errors.length > 0) {
         result.errors.forEach((err: any) => {
-          toast.error(`${err.fileName}: ${err.error}`);
+          alert.error(`${err.fileName}: ${err.error}`);
         });
       }
 
@@ -150,7 +150,7 @@ export default function MultiFileUpload({
 
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error('Upload gagal', {
+      alert.error('Upload gagal', {
         description: error.message
       });
     } finally {

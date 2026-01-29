@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { startOfMonth } from "date-fns";
 
 import ReportFilter from "@/components/reports/ReportFilter";
@@ -221,7 +221,7 @@ export default function ReportsPage() {
         details,
       });
     } catch (error: any) {
-      toast.error("Gagal Membuat Laporan", { description: error.message });
+      alert.error("Gagal Membuat Laporan", { description: error.message });
     } finally {
       setIsLoading(false);
     }

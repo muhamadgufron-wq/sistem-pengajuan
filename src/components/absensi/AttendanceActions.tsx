@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation'; // Correct import for App Router
 import { Button } from '@/components/ui/button';
 import { RefreshCcwIcon, FileText } from 'lucide-react';
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 import { exportAttendanceToPDF } from '@/lib/utils/attendance-export';
 import { format } from 'date-fns';
 
@@ -34,12 +34,12 @@ export default function AttendanceActions({ data, dateFrom, dateTo }: Attendance
 
   const handleRefresh = () => {
     router.refresh();
-    toast.success('Data diperbarui');
+    alert.success('Data diperbarui');
   };
 
   const handleExportPDF = async () => {
     if (data.length === 0) {
-      toast.error('Tidak ada data untuk diekspor');
+      alert.error('Tidak ada data untuk diekspor');
       return;
     }
 
@@ -51,10 +51,10 @@ export default function AttendanceActions({ data, dateFrom, dateTo }: Attendance
       const period = `${format(fromDate, 'dd-MM-yyyy')} s/d ${format(toDate, 'dd-MM-yyyy')}`;
       
       exportAttendanceToPDF(data, period);
-      toast.success('Berhasil ekspor ke PDF');
+      alert.success('Berhasil ekspor ke PDF');
     } catch (error: any) {
       console.error('Export error:', error);
-      toast.error('Gagal mengekspor data: ' + error.message);
+      alert.error('Gagal mengekspor data: ' + error.message);
     } finally {
       setIsExporting(false);
     }

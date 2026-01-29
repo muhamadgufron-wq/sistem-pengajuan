@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,7 +66,7 @@ export default function AjukanReimbursementPage() {
             // Validate user
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
-                toast.error("Sesi berakhir, silakan login kembali.");
+                alert.error("Sesi berakhir, silakan login kembali.");
                 router.push('/login');
                 return;
             }
@@ -74,21 +74,21 @@ export default function AjukanReimbursementPage() {
             // Validate bank
             const finalBankName = namaBank === 'Lainnya' ? bankLainnya : namaBank;
             if (namaBank === 'Lainnya' && !bankLainnya) {
-                toast.error("Harap isi nama bank lainnya.");
+                alert.error("Harap isi nama bank lainnya.");
                 setIsLoading(false);
                 return;
             }
 
             // Validate amount
             if (!jumlahUang || parseInt(jumlahUang) <= 0) {
-                toast.error("Jumlah uang tidak valid.");
+                alert.error("Jumlah uang tidak valid.");
                 setIsLoading(false);
                 return;
             }
 
             // Validate files
             if (files.length === 0) {
-                toast.error("Harap upload minimal 1 bukti pembelian/struk.");
+                alert.error("Harap upload minimal 1 bukti pembelian/struk.");
                 setIsLoading(false);
                 return;
             }
@@ -146,10 +146,10 @@ export default function AjukanReimbursementPage() {
             const uploadResult = await uploadResponse.json();
 
             // Success
-            toast.success("Reimbursement berhasil diajukan!");
+            alert.success("Reimbursement berhasil diajukan!");
             
             if (uploadResult.errors && uploadResult.errors.length > 0) {
-                toast.warning(`Beberapa file gagal diupload: ${uploadResult.errors.join(', ')}`);
+                alert.warning(`Beberapa file gagal diupload: ${uploadResult.errors.join(', ')}`);
             }
 
             // Reset form
@@ -167,7 +167,7 @@ export default function AjukanReimbursementPage() {
 
         } catch (error: any) {
             console.error('Error:', error);
-            toast.error(error.message || "Gagal mengajukan reimbursement");
+            alert.error(error.message || "Gagal mengajukan reimbursement");
         } finally {
             setIsLoading(false);
         }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from 'next/link';
@@ -24,7 +24,7 @@ export default function ResetPasswordPage() {
     // di URL (#access_token=...) dan memicu event PASSWORD_RECOVERY
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
-        toast.success("Token terverifikasi!", {
+        alert.success("Token terverifikasi!", {
           description: "Anda sekarang dapat mengatur password baru."
         });
       }
@@ -51,9 +51,9 @@ export default function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      toast.error("Reset Gagal", { description: error.message });
+      alert.error("Reset Gagal", { description: error.message });
     } else {
-      toast.success("Password Berhasil Diperbarui!", {
+      alert.success("Password Berhasil Diperbarui!", {
         description: "Anda akan diarahkan ke halaman login."
       });
       setTimeout(() => {

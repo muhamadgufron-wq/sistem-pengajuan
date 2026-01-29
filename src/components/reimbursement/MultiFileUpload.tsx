@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Upload, FileImage, File as FileIcon } from "lucide-react";
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { compressImage } from "@/lib/utils/image-compression";
 
 interface MultiFileUploadProps {
@@ -53,7 +53,7 @@ export default function MultiFileUpload({
     const fileArray = Array.from(newFiles);
 
     if (files.length + fileArray.length > maxFiles) {
-      toast.error(`Maksimal ${maxFiles} file`);
+      alert.error(`Maksimal ${maxFiles} file`);
       return;
     }
 
@@ -66,18 +66,18 @@ export default function MultiFileUpload({
       // Compress if image
       if (file.type.startsWith('image/')) {
         try {
-          const loadingToast = toast.loading(`Mengompres gambar ${file.name}...`);
+          const loadingToast = alert.loading(`Mengompres gambar ${file.name}...`);
           fileToProcess = await compressImage(file);
-          toast.dismiss(loadingToast);
+          .close(loadingToast);
         } catch (error) {
           console.error("Compression failed:", error);
-          toast.error(`Gagal mengompres ${file.name}, menggunakan file asli.`);
+          alert.error(`Gagal mengompres ${file.name}, menggunakan file asli.`);
         }
       }
 
       const error = validateFile(fileToProcess);
       if (error) {
-        toast.error(error);
+        alert.error(error);
         continue;
       }
 

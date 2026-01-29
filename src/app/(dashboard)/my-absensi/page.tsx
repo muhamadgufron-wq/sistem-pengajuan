@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { CheckInDialog } from "@/components/absensi/CheckInDialog";
 import { CheckOutDialog } from "@/components/absensi/CheckOutDialog";
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Calendar, LogIn, LogOut, ChevronLeft } from "lucide-react";
 import { formatTime } from "@/lib/utils/camera";
 import { isWednesday } from "@/lib/utils/attendance-utils";
@@ -237,7 +237,7 @@ export default function AbsensiPage() {
       }
     } catch (error) {
       console.error("Error in fetchData:", error);
-      toast.error("Gagal memuat data absensi");
+      alert.error("Gagal memuat data absensi");
     } finally {
       setIsLoading(false);
     }

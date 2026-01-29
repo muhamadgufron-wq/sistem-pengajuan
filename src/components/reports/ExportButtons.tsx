@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown, Loader2 } from "lucide-react";
 import { ReportDetail, ReportSummaryData } from "@/app/(dashboard)/(admin_panel)/reports/page";
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 
 interface ExportProps {
     reportData: { summary: ReportSummaryData; details: ReportDetail[]; };
@@ -44,10 +44,10 @@ export default function ExportButtons({ reportData, filters }: ExportProps) {
 
             autoTable(doc, { head: [tableColumn], body: tableRows, startY: 30 });
             doc.save(`${fileName}.pdf`);
-            toast.success("Laporan PDF berhasil diunduh");
+            alert.success("Laporan PDF Tersimpan", "Laporan PDF berhasil diunduh");
         } catch (error) {
             console.error("Gagal export PDF:", error);
-            toast.error("Gagal mengunduh laporan PDF");
+            alert.error("Export Gagal", "Gagal mengunduh laporan PDF");
         } finally {
             setIsPdfLoading(false);
         }
@@ -176,11 +176,11 @@ export default function ExportButtons({ reportData, filters }: ExportProps) {
 
             const buffer = await workbook.xlsx.writeBuffer();
             saveAs(new Blob([buffer]), `${fileName}.xlsx`);
-            toast.success("Laporan Excel berhasil diunduh");
+            alert.success("Laporan Excel Tersimpan", "Laporan Excel berhasil diunduh");
 
         } catch (error) {
             console.error("Gagal membuat file Excel:", error);
-            toast.error("Gagal mengunduh laporan Excel");
+            alert.error("Export Gagal", "Gagal mengunduh laporan Excel");
         } finally {
             setIsExcelLoading(false);
         }

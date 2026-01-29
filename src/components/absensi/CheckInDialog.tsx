@@ -6,7 +6,7 @@ import { CameraCapture } from './CameraCapture';
 import { createClient } from '@/lib/supabase/client';
 import { uploadAttendancePhoto, formatTime } from '@/lib/utils/camera';
 import { getCheckInStatus, isWednesday } from '@/lib/utils/attendance-utils';
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 import { Loader2 } from 'lucide-react';
 
 interface CheckInDialogProps {
@@ -27,7 +27,7 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Anda harus login terlebih dahulu');
+        alert.error('Login diperlukan', 'Anda harus login terlebih dahulu');
         return;
       }
 
@@ -57,9 +57,9 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
       if (insertError) {
         // If already checked in today
         if (insertError.code === '23505') {
-          toast.error('Anda sudah melakukan absen masuk hari ini');
+          alert.error('Sudah Absen', 'Anda sudah melakukan absen masuk hari ini');
         } else {
-          toast.error('Gagal melakukan absen masuk: ' + insertError.message);
+          alert.error('Absen Gagal', 'Gagal melakukan absen masuk: ' + insertError.message);
         }
         return;
       }
@@ -72,15 +72,13 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
         ? `Hari libur - Dihitung sebagai lembur | Waktu: ${formatTime(new Date())}`
         : `Waktu: ${formatTime(new Date())}`;
 
-      toast.success(successMessage, {
-        description: description,
-      });
+      alert.success(successMessage, description);
 
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error('Masuk error:', error);
-      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan');
+      alert.error('Terjadi Kesalahan', error instanceof Error ? error.message : 'Terjadi kesalahan');
     } finally {
       setIsSubmitting(false);
     }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from 'next/link';
@@ -29,9 +29,9 @@ export default function LupaPasswordPage() {
     });
 
     if (error) {
-      toast.error("Gagal Mengirim Email", { description: error.message });
+      alert.error("Gagal Mengirim Email", { description: error.message });
     } else {
-      toast.success("Email Terkirim!", { 
+      alert.success("Email Terkirim!", { 
         description: "Silakan cek inbox Anda untuk link reset password." 
       });
       setIsSent(true); // Tampilkan pesan sukses

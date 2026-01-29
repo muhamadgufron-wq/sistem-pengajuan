@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from 'next/link';
@@ -30,10 +30,10 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      toast.error("Pendaftaran Gagal", { description: error.message });
+      alert.error("Pendaftaran Gagal", { description: error.message });
       setIsLoading(false); // Selesai loading jika gagal
     } else {
-      toast.success("Pendaftaran Berhasil!", { 
+      alert.success("Pendaftaran Berhasil!", { 
         description: "Silakan cek email Anda untuk verifikasi." 
       });
       setFullName('');

@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import Sidebar from "@/components/layout/Sidebar";
 import { Button } from '@/components/ui/button';
 import { Menu, LogOut, User } from 'lucide-react';
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 
 type UserProfile = {
     role: string;
@@ -49,7 +49,7 @@ export default function AdminPanelShell({ children, initialProfile }: AdminPanel
 
   const handleLogout = async () => {
       await supabase.auth.signOut();
-      toast.success("Anda telah berhasil logout.");
+      alert.success("Anda telah berhasil logout.");
       router.push('/login');
       router.refresh();
   };

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, RotateCcw, X } from 'lucide-react';
 import { startCamera, stopCamera, capturePhoto, isCameraSupported } from '@/lib/utils/camera';
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 
 interface CameraCaptureProps {
   onCapture: (photoDataUrl: string) => void;
@@ -72,7 +72,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
         setStream(null);
       }
     } catch (error) {
-      toast.error('Gagal mengambil foto');
+      alert.error('Gagal Ambil Foto', 'Gagal mengambil foto');
     }
   };
 

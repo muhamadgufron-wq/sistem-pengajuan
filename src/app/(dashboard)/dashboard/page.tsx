@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import LoadingSpinner from '@/components/ui/loading-spinner';
-import { toast } from 'sonner';
+import { alert } from '@/lib/utils/sweetalert';
 import { 
     FileCheck, 
     Lock, 
@@ -153,7 +153,7 @@ export default function DashboardPage() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        toast.success("Anda berhasil logout.");
+        alert.success("Logout Berhasil", "Anda berhasil logout.");
         router.push('/login');
     };
 

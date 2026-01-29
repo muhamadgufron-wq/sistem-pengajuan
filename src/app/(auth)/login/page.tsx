@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from 'next/link';
@@ -55,7 +55,7 @@ export default function LoginPage() {
       }
 
       if (!checkData.exists) {
-        toast.error("Login Gagal", { description: "Email tidak terdaftar." });
+        alert.error("Login Gagal", "Email tidak terdaftar.");
         setIsLoading(false);
         return;
       }
@@ -67,19 +67,21 @@ export default function LoginPage() {
         // Karena kita sudah tahu emailnya ada, jika gagal di sini berarti password salah (atau isu server lain)
         // Pesan default Supabase untuk invalid credentials biasanya "Invalid login credentials"
         if (error.message.includes("Invalid login credentials")) {
-          toast.error("Login Gagal", { description: "Password salah." });
+          alert.error("Login Gagal", "Password salah.");
         } else {
-          toast.error("Login Gagal", { description: error.message });
+          alert.error("Login Gagal", error.message);
         }
         setIsLoading(false); 
       } else {
-        toast.success("Login Berhasil!");
-        router.push('/dashboard');
-        router.refresh();
+        alert.success("Login Berhasil!", "Mengalihkan ke dashboard...");
+        setTimeout(() => {
+          router.push('/dashboard');
+          router.refresh();
+        }, 1000);
       }
 
     } catch (err: any) {
-      toast.error("Terjadi Kesalahan", { description: err.message });
+      alert.error("Terjadi Kesalahan", err.message);
       setIsLoading(false);
     }
   };

@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from "sonner";
+import { alert } from "@/lib/utils/sweetalert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,11 +46,11 @@ export default function DataKaryawanPage() {
         setEmployees(data.data);
         setFilteredEmployees(data.data);
       } else {
-        toast.error("Gagal mengambil data", { description: data.message });
+        alert.error("Gagal mengambil data", { description: data.message });
       }
     } catch (error) {
        console.error("Fetch error:", error);
-       toast.error("Terjadi kesalahan jaringan");
+       alert.error("Terjadi kesalahan jaringan");
     } finally {
       setIsLoading(false);
     }
