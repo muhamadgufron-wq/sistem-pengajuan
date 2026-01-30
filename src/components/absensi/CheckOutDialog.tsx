@@ -171,14 +171,19 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
       }
 
       if (updateError) {
-        alert.error('Absen Pulang Gagal', 'Gagal melakukan absen pulang: ' + updateError.message);
+        alert.attendanceError('Absensi Gagal!', 'Terjadi kesalahan saat melakukan absensi pulang. Silakan coba kembali.');
         return;
       }
 
-      alert.success(
-        isPastCheckout ? 'Absen pulang susulan berhasil!' : 'Absen pulang berhasil!',
-        `Durasi kerja: ${workDuration}`
-      );
+      const successDesc = isPastCheckout 
+        ? `Absensi pulang susulan berhasil! Durasi kerja: <strong>${workDuration}</strong>`
+        : `Absensi pulang tercatat pada jam <strong>${formatTime(effectiveCheckoutTime)}</strong>. Hati-hati di jalan!`;
+      
+      const successTitle = isPastCheckout 
+        ? 'Absensi Berhasil!'
+        : 'Absensi Pulang Berhasil!';
+      
+      alert.attendanceSuccess(formatTime(effectiveCheckoutTime), successDesc, successTitle);
 
       onSuccess();
       onOpenChange(false);
@@ -189,7 +194,7 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
       setManualTime('');
     } catch (error) {
       console.error('Pulang error:', error);
-      alert.error('Terjadi Kesalahan', error instanceof Error ? error.message : 'Terjadi kesalahan');
+      alert.attendanceError('Absensi Gagal!', 'Terjadi kesalahan saat melakukan absensi pulang. Silakan coba kembali.');
     } finally {
       setIsSubmitting(false);
     }
@@ -284,7 +289,7 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
                   className="resize-none"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Jelaskan kegiatan atau pekerjaan yang telah Anda lakukan
+                  Jelaskan kegiatan atau pekerjaan yang telah dilakukan
                 </p>
               </div>
 

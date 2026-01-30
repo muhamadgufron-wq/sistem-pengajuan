@@ -60,28 +60,28 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
       if (insertError) {
         // If already checked in today
         if (insertError.code === '23505') {
-          alert.error('Sudah Absen', 'Anda sudah melakukan absen masuk hari ini');
+          alert.attendanceError('Absensi Gagal!', 'Anda sudah melakukan absen masuk hari ini.');
         } else {
-          alert.error('Absen Gagal', 'Gagal melakukan absen masuk: ' + insertError.message);
+          alert.attendanceError('Absensi Gagal!', 'Terjadi kesalahan saat melakukan absensi. Silakan pastikan koneksi internet stabil.');
         }
         return;
       }
 
       const successMessage = status === 'lembur' 
-        ? 'Absen lembur berhasil!' 
-        : 'Absen masuk berhasil!';
+        ? 'Absensi Berhasil!' 
+        : 'Absensi Berhasil!';
       
       const description = status === 'lembur'
-        ? `Hari libur - Dihitung sebagai lembur | Waktu: ${formatTime(new Date())}`
-        : `Waktu: ${formatTime(new Date())}`;
+        ? `Hari libur - Dihitung sebagai lembur. Absensi masuk tercatat pada jam <strong>${formatTime(new Date())}</strong>`
+        : `Absensi masuk tercatat pada jam <strong>${formatTime(new Date())}</strong>`;
 
-      alert.success(successMessage, description);
+      alert.attendanceSuccess(formatTime(new Date()), description);
 
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error('Masuk error:', error);
-      alert.error('Terjadi Kesalahan', error instanceof Error ? error.message : 'Terjadi kesalahan');
+      alert.attendanceError('Absensi Gagal!', 'Terjadi kesalahan saat melakukan absensi. Silakan pastikan koneksi internet stabil.');
     } finally {
       setIsSubmitting(false);
     }

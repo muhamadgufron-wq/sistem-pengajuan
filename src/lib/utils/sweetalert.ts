@@ -275,6 +275,133 @@ export const alert = {
    */
   close: () => {
     Swal.close();
+  },
+
+  /**
+   * Attendance Success notification - Custom design matching mockup
+   */
+  attendanceSuccess: (time: string, description?: string, title?: string) => {
+    return customSwal.fire({
+      html: `
+        <div style="text-align: center; padding: 20px 0;">
+          <div style="
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+          ">
+            <div style="
+              width: 50px;
+              height: 50px;
+              border-radius: 50%;
+              background: #10B981;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+          </div>
+          <h2 style="
+            font-size: 24px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0 0 12px 0;
+          ">${title || 'Absensi Berhasil!'}</h2>
+          <p style="
+            color: #6B7280;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0 0 24px 0;
+            padding: 0 20px;
+          ">${description || `Check-in Anda tercatat pada jam <strong>${time}</strong>`}</p>
+        </div>
+      `,
+      showCancelButton: false,
+      confirmButtonText: 'Kembali ke Beranda',
+      customClass: {
+        popup: 'rounded-3xl shadow-2xl',
+        confirmButton: 'btn-confirm-custom',
+      },
+      buttonsStyling: false,
+      showClass: {
+        popup: 'animate__animated animate__zoomIn animate__faster'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__fadeOut animate__faster'
+      }
+    });
+  },
+
+  /**
+   * Attendance Error notification - Custom design matching mockup
+   */
+  attendanceError: (title: string, message: string) => {
+    return customSwal.fire({
+      html: `
+        <div style="text-align: center; padding: 20px 0;">
+          <div style="
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+          ">
+            <div style="
+              width: 50px;
+              height: 50px;
+              border-radius: 50%;
+              background: #EF4444;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </div>
+          </div>
+          <h2 style="
+            font-size: 24px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 0 0 12px 0;
+          ">${title}</h2>
+          <p style="
+            color: #6B7280;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0 0 24px 0;
+            padding: 0 20px;
+          ">${message}</p>
+        </div>
+      `,
+      showCancelButton: false,
+      confirmButtonText: 'Coba Lagi',
+      customClass: {
+        popup: 'rounded-3xl shadow-2xl',
+        confirmButton: 'btn-confirm-custom',
+      },
+      buttonsStyling: false,
+      showClass: {
+        popup: 'animate__animated animate__zoomIn animate__faster'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__fadeOut animate__faster'
+      }
+    });
   }
 };
 
