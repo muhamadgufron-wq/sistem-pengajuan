@@ -44,11 +44,14 @@ export function CheckInDialog({ open, onOpenChange, onSuccess }: CheckInDialogPr
       const status = getCheckInStatus(today);
 
       // Insert absensi record (without keterangan)
+      // Use Jakarta timezone for date to avoid UTC timezone issues during early morning
+      const jakartaDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+      
       const { error: insertError } = await supabase
         .from('absensi')
         .insert({
           user_id: user.id,
-          tanggal: new Date().toISOString().split('T')[0],
+          tanggal: jakartaDate,
           check_in_time: new Date().toISOString(),
           check_in_photo_url: photoPath,
           status: status,
