@@ -53,7 +53,14 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
     if (isPastCheckout && manualTime) {
       const [hours, minutes] = manualTime.split(':').map(Number);
       const date = new Date(attendanceDate!);
-      date.setHours(hours, minutes);
+      date.setHours(hours, minutes, 0, 0);
+      
+      // 🔥 FIX: Jika checkout lebih awal dari check-in, berarti checkout di hari berikutnya
+      // Contoh: Masuk 07:26, Pulang 01:43 (dini hari) -> tambahkan 1 hari
+      if (date <= checkInDate) {
+        date.setDate(date.getDate() + 1);
+      }
+      
       return date;
     }
     return currentTime;
@@ -77,10 +84,19 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
       // Validate time
       const [hours, minutes] = manualTime.split(':').map(Number);
       const checkoutDate = new Date(attendanceDate!);
-      checkoutDate.setHours(hours, minutes);
+      checkoutDate.setHours(hours, minutes, 0, 0);
       
+      // 🔥 FIX: Jika checkout lebih awal dari check-in, tambahkan 1 hari (shift malam/overtime)
       if (checkoutDate <= checkInDate) {
-        alert.error('Waktu Tidak Valid', 'Jam pulang harus lebih besar dari jam masuk (' + formatTime(checkInDate) + ')');
+        checkoutDate.setDate(checkoutDate.getDate() + 1);
+      }
+      
+      // Validasi: Checkout maksimal 24 jam setelah check-in (opsional, bisa disesuaikan)
+      const maxCheckoutTime = new Date(checkInDate);
+      maxCheckoutTime.setDate(maxCheckoutTime.getDate() + 2); // Max 2 hari
+      
+      if (checkoutDate > maxCheckoutTime) {
+        alert.error('Waktu Tidak Valid', 'Jam pulang tidak boleh lebih dari 2 hari setelah jam masuk');
         return;
       }
     }
@@ -116,7 +132,13 @@ export function CheckOutDialog({ open, onOpenChange, onSuccess, checkInTime, att
       if (isPastCheckout && manualTime) {
         const [hours, minutes] = manualTime.split(':').map(Number);
         const date = new Date(attendanceDate!);
-        date.setHours(hours, minutes);
+        date.setHours(hours, minutes, 0, 0);
+        
+        // 🔥 FIX: Jika checkout lebih awal dari check-in, tambahkan 1 hari
+        if (date <= checkInDate) {
+          date.setDate(date.getDate() + 1);
+        }
+        
         finalCheckOutTime = date.toISOString();
       }
 
