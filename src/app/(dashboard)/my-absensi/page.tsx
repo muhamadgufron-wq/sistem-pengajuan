@@ -105,7 +105,7 @@ export default function AbsensiPage() {
         .is("check_out_time", null)
         .eq("tanggal", yesterdayStr)
         .not("status", "in", '("cuti", "izin", "sakit", "alpha")')
-        .single();
+        .maybeSingle();
 
       if (incompleteData) {
         setIncompleteAttendance(incompleteData);
@@ -133,7 +133,7 @@ export default function AbsensiPage() {
           .select("*")
           .eq("user_id", user.id)
           .eq("tanggal", getTodayDate())
-          .single();
+          .maybeSingle();
 
         if (todayError && todayError.code !== "PGRST116") {
           console.error("Error fetching today attendance:", todayError);
