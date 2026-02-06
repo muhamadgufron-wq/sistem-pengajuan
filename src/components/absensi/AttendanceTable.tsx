@@ -24,13 +24,13 @@ interface AttendanceRecord {
 
 const StatusBadge = ({ status }: { status: string }) => {
   const statusMap: Record<string, { label: string; className: string }> = {
-    Hadir: { label: 'Hadir', className: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400' },
-    Izin: { label: 'Izin', className: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400' },
-    Sakit: { label: 'Sakit', className: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400' },
-    Alpha: { label: 'Alpha', className: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400' },
-    Cuti: { label: 'Cuti', className: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400' },
-    Libur: { label: 'Libur', className: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400' },
-    Lembur: { label: 'Lembur', className: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400' },
+    Hadir: { label: 'HADIR', className: 'bg-[#D1FAE5] text-[#10B981] border-transparent' },
+    Izin: { label: 'IZIN', className: 'bg-[#DBEAFE] text-[#3B82F6] border-transparent' },
+    Sakit: { label: 'SAKIT', className: 'bg-[#FEF3C7] text-[#D97706] border-transparent' },
+    Alpha: { label: 'ALPA', className: 'bg-[#FEE2E2] text-[#EF4444] border-transparent' },
+    Cuti: { label: 'CUTI', className: 'bg-purple-100 text-purple-700 border-transparent' },
+    Libur: { label: 'LIBUR', className: 'bg-gray-100 text-gray-700 border-transparent' },
+    Lembur: { label: 'LEMBUR', className: 'bg-orange-100 text-orange-700 border-transparent' },
   };
 
   // Case insensitive match
@@ -38,7 +38,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   const statusInfo = statusMap[normalizedStatus];
 
   return (
-    <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${statusInfo.className}`}>
+    <span className={`px-4 py-1.5 text-[10px] font-bold rounded-full tracking-wider ${statusInfo.className}`}>
       {statusInfo.label}
     </span>
   );
@@ -63,15 +63,15 @@ export default function AttendanceTable({ data }: { data: AttendanceRecord[] }) 
   return (
     <>
       <Table>
-        <TableHeader className="bg-muted/30">
-          <TableRow>
-            <TableHead className="w-[20%]">Karyawan</TableHead>
-            <TableHead className="w-[15%]">Tanggal</TableHead>
-            <TableHead className="w-[15%]">Masuk</TableHead>
-            <TableHead className="w-[15%]">Pulang</TableHead>
-            <TableHead className="w-[10%]">Durasi</TableHead>
-            <TableHead className="w-[15%]">Keterangan</TableHead>
-            <TableHead className="w-[10%] text-right">Status</TableHead>
+        <TableHeader className="bg-gray-50/50">
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="w-[250px] font-semibold text-xs uppercase tracking-wider text-gray-500 py-4 pl-6">KARYAWAN</TableHead>
+            <TableHead className="w-[180px] font-semibold text-xs uppercase tracking-wider text-gray-500 py-4">TANGGAL</TableHead>
+            <TableHead className="w-[120px] font-semibold text-xs uppercase tracking-wider text-gray-500 py-4">MASUK</TableHead>
+            <TableHead className="w-[120px] font-semibold text-xs uppercase tracking-wider text-gray-500 py-4">PULANG</TableHead>
+            <TableHead className="w-[100px] font-semibold text-xs uppercase tracking-wider text-gray-500 py-4">DURASI</TableHead>
+            <TableHead className="font-semibold text-xs uppercase tracking-wider text-gray-500 py-4">KETERANGAN</TableHead>
+            <TableHead className="w-[120px] font-semibold text-xs uppercase tracking-wider text-gray-500 text-right py-4 pr-6">STATUS</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -83,18 +83,27 @@ export default function AttendanceTable({ data }: { data: AttendanceRecord[] }) 
             </TableRow>
           ) : (
             data.map((record) => (
-              <TableRow key={`${record.user_id}-${record.tanggal}`} onClick={() => setViewingDetail(record)} className="cursor-pointer hover:bg-muted/50 [&_td]:py-4">
-                <TableCell className="font-medium">{record.full_name}</TableCell>
-                <TableCell>
+              <TableRow key={`${record.user_id}-${record.tanggal}`} onClick={() => setViewingDetail(record)} className="cursor-pointer hover:bg-gray-50/60 border-b border-gray-100 last:border-0">
+                <TableCell className="py-4 pl-6">
+                    <div className="flex items-center gap-3">
+                        <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold ${
+                            ['bg-red-100 text-red-600', 'bg-blue-100 text-blue-600', 'bg-green-100 text-green-600', 'bg-orange-100 text-orange-600', 'bg-purple-100 text-purple-600'][record.full_name.length % 5]
+                        }`}>
+                            {record.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                        </div>
+                        <span className="font-semibold text-gray-900">{record.full_name}</span>
+                    </div>
+                </TableCell>
+                <TableCell className="py-4 text-gray-600">
                     {new Date(record.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' })}
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-4">
                     {record.check_in_time ? (
                     <div className="flex items-center gap-2">
-                        <span className="font-medium">{formatTime(new Date(record.check_in_time))}</span>
+                        <span className="font-bold text-gray-900">{formatTime(new Date(record.check_in_time))}</span>
                         {record.check_in_photo_url && (
                             <div 
-                            className="h-1.5 w-1.5 rounded-full bg-blue-500" 
+                            className="h-2 w-2 rounded-full bg-blue-500 ring-2 ring-white" 
                             title="Ada foto"
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -103,15 +112,15 @@ export default function AttendanceTable({ data }: { data: AttendanceRecord[] }) 
                             />
                         )}
                     </div>
-                    ) : <span className="text-muted-foreground">-</span>}
+                    ) : <span className="text-muted-foreground text-sm">-</span>}
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-4">
                     {record.check_out_time ? (
                     <div className="flex items-center gap-2">
-                        <span className="font-medium">{formatTime(new Date(record.check_out_time))}</span>
+                        <span className="font-bold text-gray-900">{formatTime(new Date(record.check_out_time))}</span>
                         {record.check_out_photo_url && (
                             <div 
-                            className="h-1.5 w-1.5 rounded-full bg-blue-500" 
+                            className="h-2 w-2 rounded-full bg-blue-500 ring-2 ring-white" 
                             title="Ada foto"
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -120,15 +129,15 @@ export default function AttendanceTable({ data }: { data: AttendanceRecord[] }) 
                             />
                         )}
                     </div>
-                    ) : <span className="text-muted-foreground">-</span>}
+                    ) : <span className="text-muted-foreground text-sm">-</span>}
                 </TableCell>
-                <TableCell className="text-muted-foreground font-mono text-xs">
+                <TableCell className="text-gray-500 font-medium text-sm py-4">
                     {calculateWorkDuration(record.check_in_time, record.check_out_time)}
                 </TableCell>
-                <TableCell className="truncate max-w-[150px]" title={record.check_in_keterangan || ''}>
+                <TableCell className="truncate max-w-[150px] text-gray-500 py-4" title={record.check_in_keterangan || ''}>
                     {record.check_in_keterangan || '-'}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right py-4 pr-6">
                     <StatusBadge status={record.status} />
                 </TableCell>
               </TableRow>

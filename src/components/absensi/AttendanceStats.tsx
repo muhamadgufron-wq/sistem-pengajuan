@@ -60,24 +60,26 @@ export default function AttendanceStats({ stats, todayData, allEmployees }: Atte
   
   return (
     <>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-            { label: 'Hadir', count: stats.total_hadir, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20', status: 'hadir' },
-            { label: 'Izin', count: stats.total_izin, icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', status: 'izin' },
-            { label: 'Sakit', count: stats.total_sakit, icon: AlertCircle, color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/20', status: 'sakit' },
-            { label: 'Belum Masuk', count: stats.total_alpha, icon: Users, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20', status: 'alpha' },
+            { label: 'HADIR', count: stats.total_hadir, icon: CheckCircle, color: 'text-[#10B981]', iconBg: 'bg-[#D1FAE5]', status: 'hadir' },
+            { label: 'IZIN', count: stats.total_izin, icon: Clock, color: 'text-[#3B82F6]', iconBg: 'bg-[#DBEAFE]', status: 'izin' },
+            { label: 'SAKIT', count: stats.total_sakit, icon: AlertCircle, color: 'text-[#D97706]', iconBg: 'bg-[#FEF3C7]', status: 'sakit' },
+            { label: 'BELUM MASUK', count: stats.total_alpha, icon: Users, color: 'text-[#EF4444]', iconBg: 'bg-[#FEE2E2]', status: 'alpha' },
         ].map((stat) => (
             <Card 
                 key={stat.label} 
-                className={`border-0 shadow-sm cursor-pointer hover:shadow-md transition-all ${stat.bg}`}
+                className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-all bg-white"
                 onClick={() => handleStatusCardClick(stat.status)}
             >
             <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                <h3 className={`text-2xl font-bold ${stat.color}`}>{stat.count}</h3>
+                    <p className="text-xs font-bold text-muted-foreground mb-1 tracking-wider">{stat.label}</p>
+                    <h3 className={`text-3xl font-bold ${stat.color}`}>{stat.count}</h3>
                 </div>
-                <stat.icon className={`h-8 w-8 opacity-80 ${stat.color}`} />
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${stat.iconBg}`}>
+                    <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                </div>
             </CardContent>
             </Card>
         ))}

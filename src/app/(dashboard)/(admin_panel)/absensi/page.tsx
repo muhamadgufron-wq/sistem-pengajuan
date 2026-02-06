@@ -98,11 +98,12 @@ export default async function AdminAbsensiPage({
 
 
   return (
-    <div className="space-y-6 p-1">
+    <div className="p-8">
+      <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="pl-4">
-          <h1 className="text-2xl font-bold tracking-tight">Monitoring Absensi</h1>
-          <p className="text-sm text-muted-foreground">Pantau kehadiran karyawan secara real-time</p>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Monitoring Absensi</h1>
+          <p className="text-sm text-gray-500 mt-1">Pantau kehadiran karyawan secara real-time hari ini.</p>
         </div>
         <div className="flex items-center gap-2">
             <AttendanceActions 
@@ -120,14 +121,13 @@ export default async function AdminAbsensiPage({
         allEmployees={allEmployees} 
       />
 
-      <Card className="shadow-sm border-muted/60">
-        <CardHeader className="p-4 border-b">
-           <AttendanceFilters initialDateFrom={dateFromStr} initialDateTo={dateToStr} />
-        </CardHeader>
-        <CardContent className="p-0">
-           <AttendanceTable data={processedData} />
+      <Card className="shadow-sm border-gray-200">
+        <CardContent className="p-6 space-y-4">
+          <AttendanceFilters initialDateFrom={dateFromStr} initialDateTo={dateToStr} />
+          <AttendanceTable data={processedData} />
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

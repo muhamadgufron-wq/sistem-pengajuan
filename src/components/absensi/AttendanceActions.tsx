@@ -61,16 +61,21 @@ export default function AttendanceActions({ data, dateFrom, dateTo }: Attendance
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm" onClick={handleRefresh}>
+    <div className="flex items-center gap-3">
+      <Button 
+        variant="outline" 
+        size="default" 
+        onClick={handleRefresh}
+        className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+      >
         <RefreshCcwIcon className="h-4 w-4 mr-2" />
         Refresh
       </Button>
       <Button 
         onClick={handleExportPDF} 
         disabled={isExporting} 
-        size="sm" 
-        className="bg-red-600 hover:bg-red-700 text-white"
+        size="default" 
+        className="bg-[#EF4444] hover:bg-[#DC2626] text-white shadow-sm"
       >
         <FileText className="h-4 w-4 mr-2" />
         {isExporting ? 'Exporting...' : 'Export PDF'}

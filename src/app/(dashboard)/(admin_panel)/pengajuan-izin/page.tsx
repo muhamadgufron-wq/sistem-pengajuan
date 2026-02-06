@@ -133,6 +133,28 @@ export default function AdminPengajuanIzinPage() {
         setAdminNote(item.catatan_admin || '');
     };
 
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Calculate stats
+    const totalIzin = leaveRequests.filter(r => r.jenis.toLowerCase() === 'izin').length;
+    const totalCuti = leaveRequests.filter(r => r.jenis.toLowerCase() === 'cuti').length;
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const disetujuiBulanIni = leaveRequests.filter(r => {
+        const requestDate = new Date(r.tanggal_mulai);
+        return r.status.toLowerCase() === 'disetujui' && 
+               requestDate.getMonth() === currentMonth &&
+               requestDate.getFullYear() === currentYear;
+    }).length;
+
+    // Filter data based on search
+    const filteredRequests = leaveRequests.filter(item => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return item.full_name?.toLowerCase().includes(query) || 
+               item.jenis?.toLowerCase().includes(query);
+    });
+
     const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('id-ID', { 
         day: 'numeric', 
         month: 'long', 
@@ -324,92 +346,120 @@ export default function AdminPengajuanIzinPage() {
             </Dialog>
 
             {/* Main Content */}
-            <div className="h-full flex flex-col gap-6">
-                <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border">
-                    <CardHeader className="p-0 flex-shrink-0">
-                        <div className="px-6 py-4 border-b">
-                            <h3 className="text-lg font-semibold">Daftar Pengajuan Izin</h3>
-                        </div>
-                    </CardHeader>
+            <div className="p-8">
+                <div className="space-y-6">
+                    {/* Header */}
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Daftar Pengajuan Izin</h1>
+                    </div>
 
-                    <CardContent className="p-0 flex-1 overflow-y-auto">
-                        <Table>
-                            <TableHeader className="sticky top-0 bg-card/80 backdrop-blur-sm z-10">
-                                <TableRow>
-                                    <TableHead className="px-6">Pemohon</TableHead>
-                                    <TableHead className="px-6">Jenis</TableHead>
-                                    <TableHead className="px-6">Tanggal</TableHead>
-                                    <TableHead className="px-6">Jumlah Hari</TableHead>
-                                    <TableHead className="px-6">Status</TableHead>
-                                    <TableHead className="px-6 text-right">Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading || minLoading ? ( 
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="h-64 text-center px-6 py-4">
-                                            <LoadingSpinner />
-                                        </TableCell>
-                                    </TableRow> 
-                                ) : leaveRequests.length === 0 ? ( 
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center px-6 py-4">Tidak ada data.</TableCell>
+                    {/* Search + Stats Cards */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        {/* Search Bar */}
+                        <div className="w-full md:w-[350px]">
+                            <div className="relative">
+                                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder="Cari pemohon atau jenis izin..."
+                                    className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Table */}
+                    <Card className="shadow-sm border-gray-200">
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader className="bg-gray-50/50">
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableHead className="font-semibold text-xs uppercase tracking-wider text-gray-500 py-4 pl-6">PEMOHON</TableHead>
+                                        <TableHead className="font-semibold text-xs uppercase tracking-wider text-gray-500 py-4">JENIS</TableHead>
+                                        <TableHead className="font-semibold text-xs uppercase tracking-wider text-gray-500 py-4">TANGGAL</TableHead>
+                                        <TableHead className="font-semibold text-xs uppercase tracking-wider text-gray-500 py-4">DURASI</TableHead>
+                                        <TableHead className="font-semibold text-xs uppercase tracking-wider text-gray-500 py-4">STATUS</TableHead>
+                                        <TableHead className="font-semibold text-xs uppercase tracking-wider text-gray-500 text-right py-4 pr-6">AKSI</TableHead>
                                     </TableRow>
-                                ) : (
-                                    leaveRequests.map(item => (
-                                        <TableRow 
-                                            key={item.id} 
-                                            onClick={() => setViewingItem(item)}
-                                            className="cursor-pointer hover:bg-muted/50"
-                                        >
-                                            <TableCell className="px-6 py-4 font-medium">{item.full_name || 'Tanpa Nama'}</TableCell>
-                                            <TableCell className="px-6 py-4">
-                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium uppercase">
-                                                    {item.jenis}
-                                                </span>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading || minLoading ? ( 
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-64 text-center px-6 py-4">
+                                                <LoadingSpinner />
                                             </TableCell>
-                                            <TableCell className="px-6 py-4">
-                                                <div className="text-sm">
-                                                    <div>{formatDate(item.tanggal_mulai)}</div>
-                                                    <div className="text-muted-foreground">s/d {formatDate(item.tanggal_selesai)}</div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="px-6 py-4 font-medium">{item.jumlah_hari} hari</TableCell>
-                                            <TableCell className="px-6 py-4">
-                                                <StatusBadge status={item.status} />
-                                            </TableCell>
-                                            <TableCell className="px-6 py-4 text-right space-x-2">
-                                                {item.bukti_url && (
-                                                    <Button 
-                                                        variant="outline" 
+                                        </TableRow> 
+                                    ) : filteredRequests.length === 0 ? ( 
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center px-6 py-4">Tidak ada data.</TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        filteredRequests.map(item => (
+                                            <TableRow 
+                                                key={item.id} 
+                                                onClick={() => setViewingItem(item)}
+                                                className="cursor-pointer hover:bg-gray-50/60 border-b border-gray-100 last:border-0"
+                                            >
+                                                <TableCell className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold ${
+                                                            ['bg-red-100 text-red-600', 'bg-blue-100 text-blue-600', 'bg-green-100 text-green-600', 'bg-orange-100 text-orange-600', 'bg-purple-100 text-purple-600'][(item.full_name?.length || 0) % 5]
+                                                        }`}>
+                                                            {(item.full_name || 'T').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                                                        </div>
+                                                        <span className="font-semibold text-gray-900">{item.full_name || 'Tanpa Nama'}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                                                        item.jenis.toLowerCase() === 'izin' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                                    }`}>
+                                                        {item.jenis}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <div className="text-sm">
+                                                        <div className="font-medium text-gray-900">{formatDate(item.tanggal_mulai)}</div>
+                                                        <div className="text-gray-500 text-xs">s/d {formatDate(item.tanggal_selesai)}</div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4 font-semibold text-gray-900">{item.jumlah_hari} hari</TableCell>
+                                                <TableCell className="px-6 py-4">
+                                                    <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                                                        item.status.toLowerCase() === 'disetujui' ? 'bg-green-100 text-green-700' :
+                                                        item.status.toLowerCase() === 'ditolak' ? 'bg-red-100 text-red-700' :
+                                                        'bg-yellow-100 text-yellow-700'
+                                                    }`}>
+                                                        {item.status.toUpperCase()}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="px-6 py-4 text-right">
+                                                    <Button
+                                                        variant="ghost" 
                                                         size="sm" 
-                                                        onClick={(e) => {
+                                                        className="h-8 w-8 p-0 hover:bg-gray-100"
+                                                        onClick={(e) => { 
                                                             e.stopPropagation();
-                                                            setBuktiItem(item);
+                                                            openUpdateDialog(item); 
                                                         }}
                                                     >
-                                                        Lihat Bukti
+                                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
                                                     </Button>
-                                                )}
-                                                <Button
-                                                    variant="default" 
-                                                    size="sm" 
-                                                    className="bg-emerald-500 text-white shadow-md shadow-emerald-200 hover:bg-emerald-600 border-none"
-                                                    onClick={(e) => { 
-                                                        e.stopPropagation();
-                                                        openUpdateDialog(item); 
-                                                    }}
-                                                >
-                                                    Update
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </>
     );

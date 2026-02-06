@@ -62,27 +62,27 @@ export default function AttendanceFilters({ initialDateFrom, initialDateTo }: { 
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-lg hidden md:block">Log Kehadiran</h3>
+            <h3 className="font-bold text-lg hidden md:block tracking-tight">Log Kehadiran</h3>
         </div>
         
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
             {/* Search */}
             <div className="relative">
-                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                     placeholder="Cari karyawan..." 
-                    className="pl-9 h-9 w-[180px] bg-background" 
+                    className="pl-9 h-10 w-[250px] bg-gray-50/50 border-gray-100 focus:bg-white transition-colors" 
                     defaultValue={searchParams.get('q')?.toString()}
                     onChange={(e) => handleSearch(e.target.value)}
                 />
             </div>
             
-            {/* Date Pickers */}
-            <div className="flex items-center bg-background rounded-md border shadow-sm">
+            {/* Date Pickers - Combined Look */}
+            <div className="flex items-center bg-white rounded-md border shadow-sm h-10 px-2">
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-9 px-3 hover:bg-transparent">
-                            <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <Button variant="ghost" size="sm" className="h-8 px-2 hover:bg-gray-50 text-gray-700 font-medium">
+                            <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
                             <span className="text-sm">{dateFrom ? format(dateFrom, 'dd MMM') : 'Dari'}</span>
                         </Button>
                     </PopoverTrigger>
@@ -90,10 +90,10 @@ export default function AttendanceFilters({ initialDateFrom, initialDateTo }: { 
                         <Calendar mode="single" selected={dateFrom} onSelect={(date) => handleDateChange('from', date)} initialFocus />
                     </PopoverContent>
                 </Popover>
-                <span className="text-muted-foreground text-xs px-1">-</span>
+                <span className="text-gray-300 text-sm">-</span>
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-9 px-3 hover:bg-transparent">
+                        <Button variant="ghost" size="sm" className="h-8 px-2 hover:bg-gray-50 text-gray-700 font-medium">
                             <span className="text-sm">{dateTo ? format(dateTo, 'dd MMM') : 'Sampai'}</span>
                         </Button>
                     </PopoverTrigger>
@@ -105,8 +105,8 @@ export default function AttendanceFilters({ initialDateFrom, initialDateTo }: { 
 
             {/* Reset */}
             {(searchParams.has('q') || searchParams.has('from')) && (
-                <Button variant="ghost" size="icon" onClick={resetFilters} className="h-9 w-9">
-                    <XCircle className="h-4 w-4 text-muted-foreground" />
+                <Button variant="ghost" size="icon" onClick={resetFilters} className="h-10 w-10 text-muted-foreground hover:text-red-500 hover:bg-red-50">
+                    <XCircle className="h-5 w-5" />
                 </Button>
             )}
         </div>
